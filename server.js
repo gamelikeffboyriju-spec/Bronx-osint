@@ -106,8 +106,8 @@ app.get('/', (req, res) => {
   
   endpoints.forEach(ep => {
     endpointUrls[ep.path.replace('/', '')] = {
-      url: `https://bronx-osint-api.onrender.com/api/key-bronx${ep.path}?key=YOUR_KEY&${ep.param}=${ep.example}`,
-      example: `https://bronx-osint-api.onrender.com/api/key-bronx${ep.path}?key=BRONX_KEY_2026&${ep.param}=${ep.example}`,
+      url: `https://bronx-api.onrender.com/api/key-bronx${ep.path}?key=YOUR_KEY&${ep.param}=${ep.example}`,
+      example: `https://bronx-api.onrender.com/api/key-bronx${ep.path}?key=BRONX_KEY_2026&${ep.param}=${ep.example}`,
       description: ep.desc
     };
   });
@@ -126,7 +126,7 @@ app.get('/', (req, res) => {
     base_url: "https://bronx-osint-api.onrender.com",
     endpoints: endpointUrls,
     total_endpoints: endpoints.length,
-    note: "Response se 'by': '@ftgamer2' aur 'channel' auto-hide ho jayenge"
+    note: "Response se 'by': '@BRONX_ULTRA' aur 'channel' auto-hide ho jayenge"
   });
 });
 
