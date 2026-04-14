@@ -8,7 +8,7 @@ app.use(express.json());
 
 // ========== CONFIG ==========
 const REAL_API_BASE = 'https://ft-osint-api.onrender.com/api';
-const REAL_API_KEY = 'op';
+const REAL_API_KEY = 'nobita';
 
 // API Keys
 const VALID_KEYS = ['BRONX_KEY_2026', 'DEMO_KEY', 'test123'];
@@ -123,10 +123,10 @@ app.get('/', (req, res) => {
       demo_key: "BRONX_KEY_2026",
       how_to_get: "Contact @BRONX_ULTRA on Telegram"
     },
-    base_url: "https://bronx-osint-api.onrender.com",
+    base_url: "https://bronx-osint.onrender.com",
     endpoints: endpointUrls,
     total_endpoints: endpoints.length,
-    note: "Response se 'by': '@ftgamer2' aur 'channel' auto-hide ho jayenge"
+    note: "Response se 'by': '@BRONX_ULTRA' aur 'channel' auto-hide ho jayenge"
   });
 });
 
@@ -142,6 +142,6 @@ app.get('/test', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ BRONX OSINT API running on port ${PORT}`);
-  console.log(`🌐 https://bronx-osint-api.onrender.com`);
+  console.log(`🌐 https://bronx-osint.onrender.com`);
   console.log(`🔑 Valid API Keys: ${VALID_KEYS.join(', ')}`);
 });
