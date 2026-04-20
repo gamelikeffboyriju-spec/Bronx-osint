@@ -24,7 +24,7 @@ module.exports = async (req, res) => {
     
     try {
         // Fetch from upstream API
-        const response = await axios.get(`http://45.91.48.51:3000/api/tgnum?id=${id}`, {
+        const response = await axios.get(`http://45.91.248.51:3000/api/tgnum?id=${id}`, {
             timeout: 30000,
             headers: {
                 'User-Agent': 'BRONX-OSINT/2.0'
