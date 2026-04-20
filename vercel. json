@@ -1,9 +1,8 @@
 {
-    "rewrites": [
-        { "source": "/tg", "destination": "/api/search" },
-        { "source": "/adhar", "destination": "/api/search" },
-        { "source": "/aadhaar", "destination": "/api/search" },
-        { "source": "/num", "destination": "/api/search" },
-        { "source": "/", "destination": "/api/search" }
-    ]
+    "version": 2,
+    "functions": {
+        "api/index.js": {
+            "maxDuration": 10
+        }
+    }
 }
