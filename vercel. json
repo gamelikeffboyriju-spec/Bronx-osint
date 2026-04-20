@@ -1,6 +1,9 @@
 {
-  "version": 2,
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index" }
-  ]
+    "rewrites": [
+        { "source": "/tg", "destination": "/api/search" },
+        { "source": "/adhar", "destination": "/api/search" },
+        { "source": "/aadhaar", "destination": "/api/search" },
+        { "source": "/num", "destination": "/api/search" },
+        { "source": "/", "destination": "/api/search" }
+    ]
 }
