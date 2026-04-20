@@ -1,5 +1,5 @@
 {
-    "name": "tg-num-api-bronx",
+    "name": "bronx-osint-tg",
     "version": "1.0.0",
     "description": "🔥 Telegram ID to Number API by @BRONX_ULTRA",
     "main": "api/index.js",
