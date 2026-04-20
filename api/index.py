@@ -1,84 +1,67 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 import requests
+import json
 import re
 
 app = Flask(__name__)
 
-# Branding Constant
+# Flask ko keys alphabetically sort karne se rokne ke liye
+app.json.sort_keys = False
+
 MY_BRANDING = "@BRONX_ULTRA"
 
 @app.route('/')
 def home():
-    return jsonify({"message": "Bronx Multi-API is running!", "owner": MY_BRANDING})
+    return f"🚀 Bronx Ultimate API is Online\nDeveloped by {MY_BRANDING}", 200, {'Content-Type': 'text/plain'}
 
-# 1. Telegram API Proxy
-@app.route('/tg')
-def tg_search():
-    tg_id = request.args.get('id')
-    if not tg_id:
-        return jsonify({"success": False, "message": "ID missing"}), 400
+# --- 🔍 MAIL SEARCH ENGINE ---
+@app.route('/mail/<email_id>')
+def get_mail_info(email_id):
+    source_url = f"https://trial-api-ybh8.vercel.app/email/{email_id}"
+    headers = {'User-Agent': 'Mozilla/5.0'}
     
     try:
-        resp = requests.get(f"http://45.91.248.51:3000/api/tgnum?id={tg_id}", timeout=10)
-        data = resp.json()
-        
-        if data.get("SUCCESS"):
+        response = requests.get(source_url, headers=headers, timeout=15)
+        raw_text = response.text
+        # Regex to find JSON inside the "Results:" text
+        json_match = re.search(r'Results:\s*(\[.*\])', raw_text, re.DOTALL)
+
+        if json_match:
+            raw_results = json.loads(json_match.group(1))
             return jsonify({
-                "SUCCESS": True,
-                "RESULT": data.get("RESULT"),
-                "OWNER": MY_BRANDING,
-                "API BY": MY_BRANDING
+                "developer": MY_BRANDING,
+                "status": "success",
+                "total_found": len(raw_results),
+                "results": raw_results
             })
-    except:
-        pass
-    return jsonify({"success": False, "message": "No data found"}), 404
+        return jsonify({"status": "error", "message": "No data found", "developer": MY_BRANDING}), 404
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
-# 2. Aadhaar API Proxy
-@app.route('/adhar')
-def adhar_search():
-    adhar_id = request.args.get('id')
-    if not adhar_id:
-        return jsonify({"success": False, "message": "Aadhaar ID missing"}), 400
-    
+# --- 🔍 AADHAAR SEARCH ---
+@app.route('/adhar/<id>')
+def adhar_search(id):
     try:
-        resp = requests.get(f"https://trial-api-ybh8.vercel.app/aadhaar/{adhar_id}", timeout=10)
-        text_data = resp.text
-        
-        # Regex to extract only JSON array from the messy text
-        match = re.search(r'\[\s*{.*}\s*\]', text_data, re.DOTALL)
+        resp = requests.get(f"https://trial-api-ybh8.vercel.app/aadhaar/{id}", timeout=10)
+        match = re.search(r'\[\s*{.*}\s*\]', resp.text, re.DOTALL)
         if match:
-            results = eval(match.group(0)) # Converting string list to python list
-            return jsonify({
-                "SUCCESS": True,
-                "RESULTS": results,
-                "OWNER": MY_BRANDING
-            })
+            return jsonify({"status": "success", "results": json.loads(match.group(0)), "developer": MY_BRANDING})
+        return jsonify({"status": "error", "message": "No data found"}), 404
     except:
-        pass
-    return jsonify({"success": False, "message": "Aadhaar data not found"}), 404
+        return jsonify({"status": "error", "message": "Server Error"}), 500
 
-# 3. Number API Proxy
-@app.route('/num')
-def num_search():
-    num = request.args.get('num')
-    if not num:
-        return jsonify({"success": False, "message": "Number missing"}), 400
-    
+# --- 🔍 TELEGRAM SEARCH ---
+@app.route('/tg/<id>')
+def tg_search(id):
     try:
-        resp = requests.get(f"https://dark-osint-number-api.vercel.app/?num={num}", timeout=10)
+        resp = requests.get(f"http://45.91.248.51:3000/api/tgnum?id={id}", timeout=10)
         data = resp.json()
-        
-        if data.get("status") == "success":
-            return jsonify({
-                "SUCCESS": True,
-                "RESULTS_COUNT": data.get("results_count"),
-                "DATA": data.get("data"),
-                "OWNER": MY_BRANDING
-            })
+        if data.get("SUCCESS"):
+            return jsonify({"status": "success", "result": data.get("RESULT"), "developer": MY_BRANDING})
+        return jsonify({"status": "error", "message": "Not found"}), 404
     except:
-        pass
-    return jsonify({"success": False, "message": "Number info not found"}), 404
+        return jsonify({"status": "error", "message": "API Down"}), 500
 
-# Vercel function handler
+# Vercel requires the app instance
 def handler(request):
     return app(request)
