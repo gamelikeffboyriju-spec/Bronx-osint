@@ -1,7 +1,5 @@
 {
   "rewrites": [
-    { "source": "/tg", "destination": "/api/tg" },
-    { "source": "/adhar", "destination": "/api/adhar" },
-    { "source": "/num", "destination": "/api/num" }
+    { "source": "/(.*)", "destination": "/api/index" }
   ]
 }
