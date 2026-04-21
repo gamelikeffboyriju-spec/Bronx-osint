@@ -11,11 +11,11 @@ OWNER_TAG = "@BRONX_ULTRA"
 CREDIT = "BRONX_ULTRA"
 DEVELOPER = "BRONX_ULTRA"
 
-# Environment Variables se lo (Render pe set karenge)
-API_ID = int(os.environ.get('API_ID', '31968824'))
-API_HASH = os.environ.get('API_HASH', 'd9847a6694b961248f4052d16b89b912')
+# Environment Variables
+API_ID = int(os.environ.get('API_ID', '0'))
+API_HASH = os.environ.get('API_HASH', '')
 
-# Session file path
+# Session file
 SESSION_PATH = '/tmp/bronx_session'
 
 # Telethon Client
@@ -24,66 +24,52 @@ client = TelegramClient(SESSION_PATH, API_ID, API_HASH)
 # --- DASHBOARD HTML ---
 DASHBOARD_HTML = """
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BRONX ULTRA CHAT ID API</title>
     <style>
-        body { background: #050505; color: #00aaff; font-family: 'Courier New', Courier, monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .container { border: 1px solid #00aaff; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px #00aaff; text-align: center; max-width: 650px; }
-        h1 { font-size: 24px; margin-bottom: 10px; color: #00aaff; }
-        .status { color: #fff; background: #00aaff; padding: 5px 10px; border-radius: 5px; font-weight: bold; }
-        .info { color: #ccc; font-size: 14px; margin: 20px 0; }
-        .url { background: #111; padding: 10px; border-radius: 5px; color: #ffaa00; word-break: break-all; font-size: 13px; }
-        footer { margin-top: 20px; font-size: 12px; color: #555; }
+        body { background: #050505; color: #00aaff; font-family: 'Courier New', monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { border: 1px solid #00aaff; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px #00aaff; text-align: center; }
+        h1 { color: #00aaff; }
+        .url { background: #111; padding: 10px; border-radius: 5px; color: #ffaa00; }
+        footer { margin-top: 20px; color: #555; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🆔 BRONX ULTRA CHAT ID API</h1>
-        <span class="status">Status: ONLINE ✅</span>
-        <p class="info">Username to Telegram Chat ID (User Account)</p>
+        <p class="info">Username to Telegram Chat ID</p>
         <div class="url">
-            📌 <b>How to Use:</b><br>
-            https://{{ host }}/chatid?username=BRONX_ULTRA
+            📌 /chatid?username=BRONX_ULTRA
         </div>
-        <footer>Developed by {{ owner }} | Privacy Protected ✅</footer>
+        <footer>Developed by {{ owner }}</footer>
     </div>
 </body>
 </html>
 """
 
-# Initialize client at startup
-@app.before_request
 async def ensure_connected():
     if not client.is_connected():
-        await client.start()
-        print("✅ Client Connected!")
+        await client.connect()
+        if not await client.is_user_authorized():
+            await client.start()
+            print("✅ Client Connected & Authorized!")
 
 @app.route('/')
 def home():
-    return render_template_string(DASHBOARD_HTML, host=request.host, owner=OWNER_TAG)
+    return render_template_string(DASHBOARD_HTML, owner=OWNER_TAG)
 
 @app.route('/chatid')
 async def chatid_lookup():
     username = request.args.get('username', '').strip()
     
     if not username:
-        return jsonify({
-            "status": "error",
-            "message": "Missing 'username' parameter",
-            "credit": CREDIT
-        }), 400
+        return jsonify({"status": "error", "message": "Missing username", "credit": CREDIT}), 400
     
     try:
+        await ensure_connected()
+        
         clean_username = username.replace("@", "")
-        
-        # Ensure connected
-        if not client.is_connected():
-            await client.start()
-        
-        # Get entity
         entity = await client.get_entity(f"@{clean_username}")
         
         result = {
@@ -91,7 +77,6 @@ async def chatid_lookup():
             "username": getattr(entity, 'username', None),
         }
         
-        # Check type
         if hasattr(entity, 'title'):
             result["type"] = "channel" if entity.broadcast else "group"
             result["title"] = entity.title
@@ -99,10 +84,6 @@ async def chatid_lookup():
             result["type"] = "user" if not entity.bot else "bot"
             result["first_name"] = entity.first_name
             result["last_name"] = getattr(entity, 'last_name', None)
-        
-        result["is_bot"] = getattr(entity, 'bot', False)
-        result["is_verified"] = getattr(entity, 'verified', False)
-        result["phone"] = getattr(entity, 'phone', None)
         
         return jsonify({
             "status": "success",
@@ -112,23 +93,9 @@ async def chatid_lookup():
         })
         
     except UsernameNotOccupiedError:
-        return jsonify({
-            "status": "error",
-            "message": f"Username @{clean_username} not found",
-            "credit": CREDIT
-        }), 404
-    except FloodWaitError as e:
-        return jsonify({
-            "status": "error",
-            "message": f"Flood wait: {e.seconds}s",
-            "credit": CREDIT
-        }), 429
+        return jsonify({"status": "error", "message": f"@{clean_username} not found", "credit": CREDIT}), 404
     except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e),
-            "credit": CREDIT
-        }), 500
+        return jsonify({"status": "error", "message": str(e), "credit": CREDIT}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
