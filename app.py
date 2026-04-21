@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify, render_template_string
-import requests
+import asyncio
+from telethon import TelegramClient
+from telethon.errors import UsernameNotOccupiedError, FloodWaitError
 import time
-import re
+import os
 
 app = Flask(__name__)
 
@@ -10,11 +12,12 @@ OWNER_TAG = "@BRONX_ULTRA"
 CREDIT = "BRONX_ULTRA"
 DEVELOPER = "BRONX_ULTRA"
 
-# Bot Token - BotFather se milega
-BOT_TOKEN = "8695953327:AAH83JCMTJrG1GxvyLR-fIj3nAGl8zHL7Tw"  # BotFather se token leke yaha dalo
+# Telegram API Credentials (my.telegram.org se lo)
+API_ID = 12345678  # Apna API ID dalo
+API_HASH = "your_api_hash_here"  # Apna API Hash dalo
 
-# Telegram API Base URL
-TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
+# Telethon Client (Session file banegi)
+client = TelegramClient('bronx_session', 31968824, d9847a6694b961248f4052d16b89b912)
 
 # --- DASHBOARD HTML ---
 DASHBOARD_HTML = """
@@ -32,129 +35,60 @@ DASHBOARD_HTML = """
         .info { color: #ccc; font-size: 14px; margin: 20px 0; }
         .url { background: #111; padding: 10px; border-radius: 5px; color: #ffaa00; word-break: break-all; font-size: 13px; }
         footer { margin-top: 20px; font-size: 12px; color: #555; }
-        .warning { color: #ffaa00; font-size: 12px; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🆔 BRONX ULTRA CHAT ID API</h1>
         <span class="status">Status: ONLINE ✅</span>
-        <p class="info">Username to Telegram Chat ID Converter</p>
+        <p class="info">Username to Telegram Chat ID (User Account)</p>
         <div class="url">
             📌 <b>How to Use:</b><br>
             https://{{ host }}/chatid?username=BRONX_ULTRA<br>
             https://{{ host }}/chatid?username=@BRONX_ULTRA
         </div>
-        <div class="warning">⚠️ Bot Token Required - Get from @BotFather</div>
         <footer>Developed by {{ owner }} | Privacy Protected ✅</footer>
     </div>
 </body>
 </html>
 """
 
-def get_chat_id_via_getupdates(username):
-    """Get chat ID by checking recent messages using getUpdates"""
-    try:
-        # Get recent updates
-        resp = requests.get(f"{TELEGRAM_API}/getUpdates", timeout=10)
-        data = resp.json()
-        
-        if data.get("ok") and data.get("result"):
-            # Search for messages from the username
-            clean_username = username.replace("@", "").lower()
-            
-            for update in data["result"]:
-                # Check message from user
-                if "message" in update:
-                    msg = update["message"]
-                    chat = msg.get("chat", {})
-                    from_user = msg.get("from", {})
-                    
-                    # Check username match
-                    if from_user.get("username", "").lower() == clean_username:
-                        return {
-                            "chat_id": chat.get("id"),
-                            "type": chat.get("type"),
-                            "first_name": from_user.get("first_name"),
-                            "last_name": from_user.get("last_name"),
-                            "username": from_user.get("username")
-                        }
-                    
-                    # Check if username in chat title
-                    if chat.get("username", "").lower() == clean_username:
-                        return {
-                            "chat_id": chat.get("id"),
-                            "type": chat.get("type"),
-                            "title": chat.get("title"),
-                            "username": chat.get("username")
-                        }
-                
-                # Check channel post
-                if "channel_post" in update:
-                    post = update["channel_post"]
-                    chat = post.get("chat", {})
-                    if chat.get("username", "").lower() == clean_username:
-                        return {
-                            "chat_id": chat.get("id"),
-                            "type": chat.get("type"),
-                            "title": chat.get("title"),
-                            "username": chat.get("username")
-                        }
-        
-        return None
-    except:
-        return None
-
-def get_chat_id_direct(username):
-    """Try direct getChat method"""
+async def get_entity_info(username):
+    """Get user/channel info using Telethon"""
     try:
         clean_username = username.replace("@", "")
-        resp = requests.get(f"{TELEGRAM_API}/getChat?chat_id=@{clean_username}", timeout=10)
-        data = resp.json()
         
-        if data.get("ok"):
-            result = data.get("result", {})
-            return {
-                "chat_id": result.get("id"),
-                "type": result.get("type"),
-                "title": result.get("title") or result.get("first_name"),
-                "username": result.get("username")
-            }
-        return None
-    except:
-        return None
-
-def get_chat_id_via_forward(username):
-    """Alternative: Use bot's own info to check"""
-    try:
-        clean_username = username.replace("@", "").lower()
+        # Resolve username to entity
+        entity = await client.get_entity(f"@{clean_username}")
         
-        # Get bot's info first
-        me_resp = requests.get(f"{TELEGRAM_API}/getMe", timeout=10)
-        if me_resp.json().get("ok"):
-            bot_username = me_resp.json()["result"]["username"]
-            
-            # Try getUpdates with limit
-            resp = requests.get(f"{TELEGRAM_API}/getUpdates?limit=100", timeout=10)
-            data = resp.json()
-            
-            if data.get("ok"):
-                for update in data["result"]:
-                    # Check all possible places for username
-                    update_str = str(update).lower()
-                    if clean_username in update_str:
-                        # Extract chat ID using regex
-                        chat_id_match = re.search(r"'id':\s*(-?\d+)", str(update))
-                        if chat_id_match:
-                            return {
-                                "chat_id": int(chat_id_match.group(1)),
-                                "username": username,
-                                "note": "Found in updates"
-                            }
+        result = {
+            "chat_id": entity.id,
+            "username": getattr(entity, 'username', None),
+            "type": "unknown"
+        }
         
-        return None
-    except:
-        return None
+        # Check entity type
+        if hasattr(entity, 'title'):
+            result["type"] = "channel" if entity.broadcast else "supergroup"
+            result["title"] = entity.title
+        elif hasattr(entity, 'first_name'):
+            result["type"] = "user" if not entity.bot else "bot"
+            result["first_name"] = entity.first_name
+            result["last_name"] = getattr(entity, 'last_name', None)
+        
+        # Additional info
+        result["phone"] = getattr(entity, 'phone', None)
+        result["is_bot"] = getattr(entity, 'bot', False)
+        result["is_verified"] = getattr(entity, 'verified', False)
+        
+        return {"success": True, "data": result}
+        
+    except UsernameNotOccupiedError:
+        return {"success": False, "message": f"Username @{clean_username} not found"}
+    except FloodWaitError as e:
+        return {"success": False, "message": f"Flood wait: {e.seconds} seconds"}
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}
 
 @app.route('/')
 def home():
@@ -171,54 +105,32 @@ def chatid_lookup():
             "credit": CREDIT
         }), 400
     
-    # Remove @ if present
-    clean_username = username.replace("@", "")
+    # Ensure client is connected
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     
     try:
-        # Try Method 1: Direct getChat (works for channels/supergroups)
-        result = get_chat_id_direct(clean_username)
+        # Connect if not already
+        if not client.is_connected():
+            loop.run_until_complete(client.start())
         
-        if result:
+        # Get entity info
+        result = loop.run_until_complete(get_entity_info(username))
+        
+        if result["success"]:
             return jsonify({
                 "status": "success",
                 "credit": CREDIT,
                 "developer": DEVELOPER,
-                "method": "direct",
-                "data": result
+                "data": result["data"]
             })
-        
-        # Try Method 2: getUpdates scanning
-        result = get_chat_id_via_getupdates(clean_username)
-        
-        if result:
+        else:
             return jsonify({
-                "status": "success",
-                "credit": CREDIT,
-                "developer": DEVELOPER,
-                "method": "updates_scan",
-                "data": result
-            })
-        
-        # Try Method 3: Alternative scan
-        result = get_chat_id_via_forward(clean_username)
-        
-        if result:
-            return jsonify({
-                "status": "success",
-                "credit": CREDIT,
-                "developer": DEVELOPER,
-                "method": "alternative",
-                "data": result
-            })
-        
-        # No result found
-        return jsonify({
-            "status": "error",
-            "message": f"Could not find Chat ID for @{clean_username}. Make sure the user/channel has interacted with the bot.",
-            "credit": CREDIT,
-            "hint": "Send a message to the bot or add bot to the channel/group"
-        }), 404
-        
+                "status": "error",
+                "message": result["message"],
+                "credit": CREDIT
+            }), 404
+            
     except Exception as e:
         return jsonify({
             "status": "error",
@@ -227,21 +139,26 @@ def chatid_lookup():
         }), 500
 
 @app.route('/setup')
-def setup_guide():
-    """Guide to setup bot token"""
+def setup_info():
     return jsonify({
         "status": "info",
         "credit": CREDIT,
-        "message": "How to get Bot Token",
         "steps": [
-            "1. Open Telegram and search @BotFather",
-            "2. Send /newbot and follow instructions",
-            "3. Copy the token you receive",
-            "4. Replace BOT_TOKEN in app.py with your token",
-            "5. Send a message to your bot (important!)",
-            "6. Redeploy the API"
+            "1. Go to https://my.telegram.org",
+            "2. Login with fake account",
+            "3. Go to API Development Tools",
+            "4. Create Application",
+            "5. Copy API ID and API Hash",
+            "6. Update app.py with your credentials"
         ]
     })
 
 if __name__ == "__main__":
+    # First time login
+    print("Starting Telegram Client...")
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(client.start())
+    print("✅ Client Connected!")
+    
     app.run(host='0.0.0.0', port=5000)
