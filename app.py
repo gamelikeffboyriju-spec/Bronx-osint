@@ -12,8 +12,8 @@ CREDIT = "BRONX_ULTRA"
 DEVELOPER = "BRONX_ULTRA"
 
 # Environment Variables
-API_ID = int(os.environ.get('API_ID', '0'))
-API_HASH = os.environ.get('API_HASH', '')
+API_ID = int(os.environ.get('31968824', '0'))
+API_HASH = os.environ.get('d9847a6694b961248f4052d16b89b912', '')
 
 # Session file
 SESSION_PATH = '/tmp/bronx_session'
