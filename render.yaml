@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: bronx-chatid-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: 31968824
+        sync: false
+      - key: d9847a6694b961248f4052d16b89b912
+        sync: false
