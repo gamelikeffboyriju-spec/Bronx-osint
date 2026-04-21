@@ -1,216 +1,247 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template_string
 import requests
+import time
+import re
 
 app = Flask(__name__)
 
-API_URL = "https://dark-osint-number-api.vercel.app/"
+# --- CONFIGURATION ---
+OWNER_TAG = "@BRONX_ULTRA"
+CREDIT = "BRONX_ULTRA"
+DEVELOPER = "BRONX_ULTRA"
+
+# Bot Token - BotFather se milega
+BOT_TOKEN = "8695953327:AAH83JCMTJrG1GxvyLR-fIj3nAGl8zHL7Tw"  # BotFather se token leke yaha dalo
+
+# Telegram API Base URL
+TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
+
+# --- DASHBOARD HTML ---
+DASHBOARD_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRONX ULTRA CHAT ID API</title>
+    <style>
+        body { background: #050505; color: #00aaff; font-family: 'Courier New', Courier, monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { border: 1px solid #00aaff; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px #00aaff; text-align: center; max-width: 650px; }
+        h1 { font-size: 24px; margin-bottom: 10px; color: #00aaff; }
+        .status { color: #fff; background: #00aaff; padding: 5px 10px; border-radius: 5px; font-weight: bold; }
+        .info { color: #ccc; font-size: 14px; margin: 20px 0; }
+        .url { background: #111; padding: 10px; border-radius: 5px; color: #ffaa00; word-break: break-all; font-size: 13px; }
+        footer { margin-top: 20px; font-size: 12px; color: #555; }
+        .warning { color: #ffaa00; font-size: 12px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🆔 BRONX ULTRA CHAT ID API</h1>
+        <span class="status">Status: ONLINE ✅</span>
+        <p class="info">Username to Telegram Chat ID Converter</p>
+        <div class="url">
+            📌 <b>How to Use:</b><br>
+            https://{{ host }}/chatid?username=BRONX_ULTRA<br>
+            https://{{ host }}/chatid?username=@BRONX_ULTRA
+        </div>
+        <div class="warning">⚠️ Bot Token Required - Get from @BotFather</div>
+        <footer>Developed by {{ owner }} | Privacy Protected ✅</footer>
+    </div>
+</body>
+</html>
+"""
+
+def get_chat_id_via_getupdates(username):
+    """Get chat ID by checking recent messages using getUpdates"""
+    try:
+        # Get recent updates
+        resp = requests.get(f"{TELEGRAM_API}/getUpdates", timeout=10)
+        data = resp.json()
+        
+        if data.get("ok") and data.get("result"):
+            # Search for messages from the username
+            clean_username = username.replace("@", "").lower()
+            
+            for update in data["result"]:
+                # Check message from user
+                if "message" in update:
+                    msg = update["message"]
+                    chat = msg.get("chat", {})
+                    from_user = msg.get("from", {})
+                    
+                    # Check username match
+                    if from_user.get("username", "").lower() == clean_username:
+                        return {
+                            "chat_id": chat.get("id"),
+                            "type": chat.get("type"),
+                            "first_name": from_user.get("first_name"),
+                            "last_name": from_user.get("last_name"),
+                            "username": from_user.get("username")
+                        }
+                    
+                    # Check if username in chat title
+                    if chat.get("username", "").lower() == clean_username:
+                        return {
+                            "chat_id": chat.get("id"),
+                            "type": chat.get("type"),
+                            "title": chat.get("title"),
+                            "username": chat.get("username")
+                        }
+                
+                # Check channel post
+                if "channel_post" in update:
+                    post = update["channel_post"]
+                    chat = post.get("chat", {})
+                    if chat.get("username", "").lower() == clean_username:
+                        return {
+                            "chat_id": chat.get("id"),
+                            "type": chat.get("type"),
+                            "title": chat.get("title"),
+                            "username": chat.get("username")
+                        }
+        
+        return None
+    except:
+        return None
+
+def get_chat_id_direct(username):
+    """Try direct getChat method"""
+    try:
+        clean_username = username.replace("@", "")
+        resp = requests.get(f"{TELEGRAM_API}/getChat?chat_id=@{clean_username}", timeout=10)
+        data = resp.json()
+        
+        if data.get("ok"):
+            result = data.get("result", {})
+            return {
+                "chat_id": result.get("id"),
+                "type": result.get("type"),
+                "title": result.get("title") or result.get("first_name"),
+                "username": result.get("username")
+            }
+        return None
+    except:
+        return None
+
+def get_chat_id_via_forward(username):
+    """Alternative: Use bot's own info to check"""
+    try:
+        clean_username = username.replace("@", "").lower()
+        
+        # Get bot's info first
+        me_resp = requests.get(f"{TELEGRAM_API}/getMe", timeout=10)
+        if me_resp.json().get("ok"):
+            bot_username = me_resp.json()["result"]["username"]
+            
+            # Try getUpdates with limit
+            resp = requests.get(f"{TELEGRAM_API}/getUpdates?limit=100", timeout=10)
+            data = resp.json()
+            
+            if data.get("ok"):
+                for update in data["result"]:
+                    # Check all possible places for username
+                    update_str = str(update).lower()
+                    if clean_username in update_str:
+                        # Extract chat ID using regex
+                        chat_id_match = re.search(r"'id':\s*(-?\d+)", str(update))
+                        if chat_id_match:
+                            return {
+                                "chat_id": int(chat_id_match.group(1)),
+                                "username": username,
+                                "note": "Found in updates"
+                            }
+        
+        return None
+    except:
+        return None
 
 @app.route('/')
 def home():
-    return '''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>@BRONX_ULTRA OSINT</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
-                background: linear-gradient(135deg, #0d0d1a 0%, #1a0a2e 100%);
-                min-height: 100vh;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                font-family: 'Courier New', monospace;
-                padding: 20px;
-            }
-            .container {
-                background: rgba(10, 10, 20, 0.95);
-                border: 2px solid #ff0055;
-                border-radius: 20px;
-                padding: 40px 30px;
-                max-width: 600px;
-                width: 100%;
-                box-shadow: 0 0 60px rgba(255, 0, 85, 0.3);
-                text-align: center;
-            }
-            h1 {
-                font-size: 2.8rem;
-                font-weight: 900;
-                background: linear-gradient(45deg, #ff0055, #ff6600);
-                -webkit-background-clip: text;
-                background-clip: text;
-                color: transparent;
-                margin-bottom: 10px;
-                letter-spacing: 3px;
-            }
-            .brand {
-                color: #ff0055;
-                font-size: 1.4rem;
-                margin-bottom: 30px;
-                border-bottom: 1px solid #ff005544;
-                padding-bottom: 15px;
-            }
-            .search-box {
-                display: flex;
-                gap: 10px;
-                margin: 30px 0;
-            }
-            input {
-                flex: 1;
-                padding: 15px 20px;
-                background: #0a0a15;
-                border: 1.5px solid #2a2a40;
-                border-radius: 50px;
-                font-size: 1.1rem;
-                color: #fff;
-                outline: none;
-            }
-            input:focus {
-                border-color: #ff0055;
-                box-shadow: 0 0 15px #ff005555;
-            }
-            button {
-                padding: 15px 30px;
-                background: #ff0055;
-                color: white;
-                border: none;
-                border-radius: 50px;
-                font-size: 1.1rem;
-                font-weight: bold;
-                cursor: pointer;
-                transition: 0.3s;
-            }
-            button:hover {
-                background: #ff3366;
-                box-shadow: 0 0 20px #ff0055;
-            }
-            .result {
-                background: #0a0a15;
-                border: 1px solid #2a2a40;
-                border-radius: 15px;
-                padding: 20px;
-                text-align: left;
-                max-height: 400px;
-                overflow-y: auto;
-                margin-top: 20px;
-                display: none;
-            }
-            .result pre {
-                color: #00ff88;
-                font-family: 'Courier New', monospace;
-                font-size: 0.9rem;
-                white-space: pre-wrap;
-                word-wrap: break-word;
-            }
-            .endpoint {
-                color: #888;
-                margin-top: 20px;
-                font-size: 0.9rem;
-            }
-            code {
-                background: #1a1a2e;
-                padding: 5px 10px;
-                border-radius: 20px;
-                color: #ff0055;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>BRONX ULTRA</h1>
-            <div class="brand">⚡ @BRONX_ULTRA ⚡</div>
-            
-            <div class="search-box">
-                <input type="text" id="numberInput" placeholder="Enter Mobile Number" value="9212757715">
-                <button onclick="searchNumber()">SEARCH</button>
-            </div>
-            
-            <div class="result" id="resultBox">
-                <pre id="resultText">Loading...</pre>
-            </div>
-            
-            <div class="endpoint">
-                <code>GET /lookup?num=9212757715</code><br>
-                <code>GET /api/num?num=9212757715</code>
-            </div>
-        </div>
-        
-        <script>
-            async function searchNumber() {
-                const num = document.getElementById('numberInput').value.trim();
-                const resultBox = document.getElementById('resultBox');
-                const resultText = document.getElementById('resultText');
-                
-                if (!num) {
-                    alert('Please enter a number');
-                    return;
-                }
-                
-                resultBox.style.display = 'block';
-                resultText.style.color = '#00ff88';
-                resultText.textContent = 'Searching for ' + num + '...';
-                
-                try {
-                    const response = await fetch('/lookup?num=' + encodeURIComponent(num));
-                    const data = await response.json();
-                    resultText.textContent = JSON.stringify(data, null, 2);
-                } catch (error) {
-                    resultText.style.color = '#ff0055';
-                    resultText.textContent = 'Error: ' + error.message;
-                }
-            }
-            
-            // Enter key support
-            document.getElementById('numberInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') searchNumber();
-            });
-            
-            // Auto search on load if default value exists
-            window.onload = function() {
-                if (document.getElementById('numberInput').value) {
-                    searchNumber();
-                }
-            };
-        </script>
-    </body>
-    </html>
-    '''
+    return render_template_string(DASHBOARD_HTML, host=request.host, owner=OWNER_TAG)
 
-@app.route('/lookup')
-@app.route('/api/num')  # Dono routes support karega
-def lookup():
-    number = request.args.get('num', '').strip()
+@app.route('/chatid')
+def chatid_lookup():
+    username = request.args.get('username', '').strip()
     
-    if not number:
+    if not username:
         return jsonify({
-            "error": "Number parameter required. Use ?num=9212757715",
-            "brand": "@BRONX_ULTRA",
-            "example": "/lookup?num=9212757715"
+            "status": "error",
+            "message": "Missing 'username' parameter",
+            "credit": CREDIT
         }), 400
-
+    
+    # Remove @ if present
+    clean_username = username.replace("@", "")
+    
     try:
-        res = requests.get(f"{API_URL}?num={number}", timeout=10)
-        data = res.json()
-
-        # Remove all @DarkOwnerX4 branding
-        remove_fields = ['status', 'branding', 'developer', 'processed_by', 'owner_contact', 'api_owner']
-        for field in remove_fields:
-            data.pop(field, None)
-
-        # Add @BRONX_ULTRA branding
-        data['brand'] = '@BRONX_ULTRA'
-        data['powered_by'] = '@BRONX_ULTRA'
-        data['search_number'] = number
-
-        return jsonify(data)
-
+        # Try Method 1: Direct getChat (works for channels/supergroups)
+        result = get_chat_id_direct(clean_username)
+        
+        if result:
+            return jsonify({
+                "status": "success",
+                "credit": CREDIT,
+                "developer": DEVELOPER,
+                "method": "direct",
+                "data": result
+            })
+        
+        # Try Method 2: getUpdates scanning
+        result = get_chat_id_via_getupdates(clean_username)
+        
+        if result:
+            return jsonify({
+                "status": "success",
+                "credit": CREDIT,
+                "developer": DEVELOPER,
+                "method": "updates_scan",
+                "data": result
+            })
+        
+        # Try Method 3: Alternative scan
+        result = get_chat_id_via_forward(clean_username)
+        
+        if result:
+            return jsonify({
+                "status": "success",
+                "credit": CREDIT,
+                "developer": DEVELOPER,
+                "method": "alternative",
+                "data": result
+            })
+        
+        # No result found
+        return jsonify({
+            "status": "error",
+            "message": f"Could not find Chat ID for @{clean_username}. Make sure the user/channel has interacted with the bot.",
+            "credit": CREDIT,
+            "hint": "Send a message to the bot or add bot to the channel/group"
+        }), 404
+        
     except Exception as e:
         return jsonify({
-            "error": str(e),
-            "brand": "@BRONX_ULTRA",
-            "search_number": number
+            "status": "error",
+            "message": f"Server error: {str(e)}",
+            "credit": CREDIT
         }), 500
 
-def handler(request, context):
-    return app(request.environ, lambda x, y: None)
+@app.route('/setup')
+def setup_guide():
+    """Guide to setup bot token"""
+    return jsonify({
+        "status": "info",
+        "credit": CREDIT,
+        "message": "How to get Bot Token",
+        "steps": [
+            "1. Open Telegram and search @BotFather",
+            "2. Send /newbot and follow instructions",
+            "3. Copy the token you receive",
+            "4. Replace BOT_TOKEN in app.py with your token",
+            "5. Send a message to your bot (important!)",
+            "6. Redeploy the API"
+        ]
+    })
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000)
