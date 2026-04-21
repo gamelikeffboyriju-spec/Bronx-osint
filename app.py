@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, render_template_string
 import asyncio
 from telethon import TelegramClient
 from telethon.errors import UsernameNotOccupiedError, FloodWaitError
-import time
 import os
 
 app = Flask(__name__)
@@ -12,12 +11,15 @@ OWNER_TAG = "@BRONX_ULTRA"
 CREDIT = "BRONX_ULTRA"
 DEVELOPER = "BRONX_ULTRA"
 
-# Telegram API Credentials (my.telegram.org se lo)
-API_ID = 12345678  # Apna API ID dalo
-API_HASH = "your_api_hash_here"  # Apna API Hash dalo
+# Environment Variables se lo (Render pe set karenge)
+API_ID = int(os.environ.get('API_ID', '31968824'))
+API_HASH = os.environ.get('API_HASH', 'd9847a6694b961248f4052d16b89b912')
 
-# Telethon Client (Session file banegi)
-client = TelegramClient('bronx_session', 31968824, d9847a6694b961248f4052d16b89b912)
+# Session file path
+SESSION_PATH = '/tmp/bronx_session'
+
+# Telethon Client
+client = TelegramClient(SESSION_PATH, API_ID, API_HASH)
 
 # --- DASHBOARD HTML ---
 DASHBOARD_HTML = """
@@ -44,8 +46,7 @@ DASHBOARD_HTML = """
         <p class="info">Username to Telegram Chat ID (User Account)</p>
         <div class="url">
             📌 <b>How to Use:</b><br>
-            https://{{ host }}/chatid?username=BRONX_ULTRA<br>
-            https://{{ host }}/chatid?username=@BRONX_ULTRA
+            https://{{ host }}/chatid?username=BRONX_ULTRA
         </div>
         <footer>Developed by {{ owner }} | Privacy Protected ✅</footer>
     </div>
@@ -53,49 +54,19 @@ DASHBOARD_HTML = """
 </html>
 """
 
-async def get_entity_info(username):
-    """Get user/channel info using Telethon"""
-    try:
-        clean_username = username.replace("@", "")
-        
-        # Resolve username to entity
-        entity = await client.get_entity(f"@{clean_username}")
-        
-        result = {
-            "chat_id": entity.id,
-            "username": getattr(entity, 'username', None),
-            "type": "unknown"
-        }
-        
-        # Check entity type
-        if hasattr(entity, 'title'):
-            result["type"] = "channel" if entity.broadcast else "supergroup"
-            result["title"] = entity.title
-        elif hasattr(entity, 'first_name'):
-            result["type"] = "user" if not entity.bot else "bot"
-            result["first_name"] = entity.first_name
-            result["last_name"] = getattr(entity, 'last_name', None)
-        
-        # Additional info
-        result["phone"] = getattr(entity, 'phone', None)
-        result["is_bot"] = getattr(entity, 'bot', False)
-        result["is_verified"] = getattr(entity, 'verified', False)
-        
-        return {"success": True, "data": result}
-        
-    except UsernameNotOccupiedError:
-        return {"success": False, "message": f"Username @{clean_username} not found"}
-    except FloodWaitError as e:
-        return {"success": False, "message": f"Flood wait: {e.seconds} seconds"}
-    except Exception as e:
-        return {"success": False, "message": f"Error: {str(e)}"}
+# Initialize client at startup
+@app.before_request
+async def ensure_connected():
+    if not client.is_connected():
+        await client.start()
+        print("✅ Client Connected!")
 
 @app.route('/')
 def home():
     return render_template_string(DASHBOARD_HTML, host=request.host, owner=OWNER_TAG)
 
 @app.route('/chatid')
-def chatid_lookup():
+async def chatid_lookup():
     username = request.args.get('username', '').strip()
     
     if not username:
@@ -105,60 +76,60 @@ def chatid_lookup():
             "credit": CREDIT
         }), 400
     
-    # Ensure client is connected
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
     try:
-        # Connect if not already
+        clean_username = username.replace("@", "")
+        
+        # Ensure connected
         if not client.is_connected():
-            loop.run_until_complete(client.start())
+            await client.start()
         
-        # Get entity info
-        result = loop.run_until_complete(get_entity_info(username))
+        # Get entity
+        entity = await client.get_entity(f"@{clean_username}")
         
-        if result["success"]:
-            return jsonify({
-                "status": "success",
-                "credit": CREDIT,
-                "developer": DEVELOPER,
-                "data": result["data"]
-            })
+        result = {
+            "chat_id": entity.id,
+            "username": getattr(entity, 'username', None),
+        }
+        
+        # Check type
+        if hasattr(entity, 'title'):
+            result["type"] = "channel" if entity.broadcast else "group"
+            result["title"] = entity.title
         else:
-            return jsonify({
-                "status": "error",
-                "message": result["message"],
-                "credit": CREDIT
-            }), 404
-            
+            result["type"] = "user" if not entity.bot else "bot"
+            result["first_name"] = entity.first_name
+            result["last_name"] = getattr(entity, 'last_name', None)
+        
+        result["is_bot"] = getattr(entity, 'bot', False)
+        result["is_verified"] = getattr(entity, 'verified', False)
+        result["phone"] = getattr(entity, 'phone', None)
+        
+        return jsonify({
+            "status": "success",
+            "credit": CREDIT,
+            "developer": DEVELOPER,
+            "data": result
+        })
+        
+    except UsernameNotOccupiedError:
+        return jsonify({
+            "status": "error",
+            "message": f"Username @{clean_username} not found",
+            "credit": CREDIT
+        }), 404
+    except FloodWaitError as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Flood wait: {e.seconds}s",
+            "credit": CREDIT
+        }), 429
     except Exception as e:
         return jsonify({
             "status": "error",
-            "message": f"Server error: {str(e)}",
+            "message": str(e),
             "credit": CREDIT
         }), 500
 
-@app.route('/setup')
-def setup_info():
-    return jsonify({
-        "status": "info",
-        "credit": CREDIT,
-        "steps": [
-            "1. Go to https://my.telegram.org",
-            "2. Login with fake account",
-            "3. Go to API Development Tools",
-            "4. Create Application",
-            "5. Copy API ID and API Hash",
-            "6. Update app.py with your credentials"
-        ]
-    })
-
 if __name__ == "__main__":
-    # First time login
-    print("Starting Telegram Client...")
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(client.start())
-    print("✅ Client Connected!")
-    
-    app.run(host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
