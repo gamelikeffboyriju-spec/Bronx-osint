@@ -1,7 +1,148 @@
+const fs = require('fs');
+const path = require('path');
+
+const KEYS_FILE = path.join(__dirname, 'bronx_keys.json');
+
+// ========== SIMPLE FILE STORAGE ==========
+function saveKeysToFile() {
+    try {
+        const data = JSON.stringify(keyStorage, null, 2);
+        fs.writeFileSync(KEYS_FILE, data, 'utf8');
+        console.log('💾 Keys saved successfully! Total:', Object.keys(keyStorage).length);
+    } catch (error) {
+        console.error('❌ SAVE FAILED:', error.message);
+    }
+}
+
+function loadKeysFromFile() {
+    try {
+        if (fs.existsSync(KEYS_FILE)) {
+            const raw = fs.readFileSync(KEYS_FILE, 'utf8');
+            const keys = JSON.parse(raw);
+            console.log('✅ Loaded', Object.keys(keys).length, 'keys from file');
+            return keys;
+        } else {
+            console.log('📝 No keys file found, creating new one...');
+            fs.writeFileSync(KEYS_FILE, '{}', 'utf8');
+            return {};
+        }
+    } catch (error) {
+        console.error('❌ LOAD FAILED:', error.message);
+        return {};
+    }
+}
+
 const express = require('express');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
+app.use(express.json());
+
+// ========== FILE PATH SETUP ==========
+const KEYS_FILE = path.join(__dirname, 'bronx_keys.json');
+
+// ========== AUTO-CREATE IF NOT EXISTS ==========
+if (!fs.existsSync(KEYS_FILE)) {
+    console.log('📁 Creating bronx_keys.json file...');
+    fs.writeFileSync(KEYS_FILE, '{}', 'utf8');
+    console.log('✅ File created at:', KEYS_FILE);
+}
+
+// ========== LOAD & SAVE FUNCTIONS ==========
+function loadKeys() {
+    try {
+        const data = fs.readFileSync(KEYS_FILE, 'utf8');
+        const parsed = JSON.parse(data);
+        
+        // Fix Date objects
+        Object.keys(parsed).forEach(key => {
+            if (parsed[key].expiry && typeof parsed[key].expiry === 'string') {
+                parsed[key].expiry = parsed[key].expiry === 'null' ? null : new Date(parsed[key].expiry);
+            }
+        });
+        
+        console.log('✅ Keys loaded:', Object.keys(parsed).length);
+        return parsed;
+    } catch (err) {
+        console.error('❌ Load error:', err.message);
+        return {};
+    }
+}
+
+function saveKeys() {
+    try {
+        // Clean Date objects for JSON
+        const clean = {};
+        Object.entries(keyStorage).forEach(([k, v]) => {
+            clean[k] = { ...v };
+            if (clean[k].expiry instanceof Date) {
+                clean[k].expiry = clean[k].expiry.toISOString();
+            }
+        });
+        
+        fs.writeFileSync(KEYS_FILE, JSON.stringify(clean, null, 2), 'utf8');
+        return true;
+    } catch (err) {
+        console.error('❌ Save error:', err.message);
+        return false;
+    }
+}
+
+const app = express();
+
+// ========== KEY STORAGE WITH FILE BACKUP ==========
+const fs = require('fs');
+const path = require('path');
+const KEYS_FILE = path.join(__dirname, 'bronx_keys.json');
+
+// Auto-create file
+try {
+    if (!fs.existsSync(KEYS_FILE)) {
+        fs.writeFileSync(KEYS_FILE, '{}', 'utf8');
+        console.log('✅ Created new keys file');
+    }
+} catch(e) {
+    console.log('⚠️ Cannot create file, check permissions');
+}
+
+let keyStorage = {};
+
+// Try loading existing keys
+try {
+    const fileData = fs.readFileSync(KEYS_FILE, 'utf8');
+    const saved = JSON.parse(fileData);
+    if (Object.keys(saved).length > 0) {
+        keyStorage = saved;
+        console.log('📂 Loaded', Object.keys(keyStorage).length, 'saved keys');
+    }
+} catch(e) {
+    console.log('📝 Starting with empty keys');
+}
+
+// Add default keys if empty
+if (Object.keys(keyStorage).length === 0) {
+    keyStorage['DEMO'] = {
+        name: 'Demo User',
+        scopes: ['number'],
+        limit: 10,
+        used: 0,
+        expiry: null,
+        hidden: false
+    };
+    console.log('➕ Added default demo key');
+}
+
+// Save function
+function saveKeysNow() {
+    try {
+        fs.writeFileSync(KEYS_FILE, JSON.stringify(keyStorage, null, 2), 'utf8');
+        console.log('💾 Saved! Total keys:', Object.keys(keyStorage).length);
+    } catch(e) {
+        console.error('❌ Save failed:', e.message);
+    }
+}
 
 // ========== CONFIG ==========
 const REAL_API_BASE = 'https://ft-osint-api.duckdns.org/api';
@@ -101,7 +242,11 @@ function parseExpiryDate(dateStr) {
 }
 
 // ========== ENHANCED KEY STORAGE ==========
+// PURANA:
 let keyStorage = {};
+
+// NAYA:
+let keyStorage = loadKeysFromFile();
 
 // ========== UNLIMITED MASTER KEY (HIDDEN FROM PUBLIC) ==========
 keyStorage['BRONX_ULTRA_MASTER_2026'] = {
