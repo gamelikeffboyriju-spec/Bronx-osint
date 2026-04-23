@@ -1,5 +1,5 @@
 {
-  "name": "bronx-osint-api",
+  "name": "bronx-api-osint",
   "version": "1.0.0",
   "description": "BRONX OSINT API - Premium OSINT Tools",
   "main": "index.js",
