@@ -2591,4 +2591,10 @@ app.use((req, res) => {
     });
 });
 
+// ========== START SERVER ==========
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`🚀 BRONX OSINT API running on port ${PORT}`);
+});
+
 module.exports = app;
