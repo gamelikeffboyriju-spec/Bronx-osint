@@ -1,63 +1,11 @@
 const express = require('express');
 const axios = require('axios');
-const fs = require('fs');      // ← ADD THIS LINE
-const path = require('path');  // ← ADD THIS LINE
-const fs = require('fs');
-const path = require('path');
-const KEYS_FILE = path.join('/tmp', 'bronx_keys.json');
-
-// Load keys from file
-function loadKeysFromFile() {
-    try {
-        if (fs.existsSync(KEYS_FILE)) {
-            const data = fs.readFileSync(KEYS_FILE, 'utf8');
-            return JSON.parse(data);
-        }
-    } catch(e) {}
-    return null;
-}
-
-// Save keys to file - TURANT CALL HOTA HAI
-function saveKeysToFile() {
-    try {
-        fs.writeFileSync(KEYS_FILE, JSON.stringify(keyStorage, null, 2));
-        console.log('✅ Keys saved to file!');
-    } catch(e) {
-        console.error('Save error:', e);
-    }
-}
 
 const app = express();
 
 // ========== CONFIG ==========
 const REAL_API_BASE = 'https://ft-osint-api.duckdns.org/api';
 const REAL_API_KEY = 'backup-bot';
-
-// ========== KEYS FILE STORAGE ==========
-const KEYS_FILE = path.join('/tmp', 'bronx_keys.json');
-
-// Load keys from file
-function loadKeysFromFile() {
-    try {
-        if (fs.existsSync(KEYS_FILE)) {
-            const data = fs.readFileSync(KEYS_FILE, 'utf8');
-            return JSON.parse(data);
-        }
-    } catch (err) {
-        console.error('Error loading keys:', err);
-    }
-    return null;
-}
-
-// Save keys to file
-function saveKeysToFile() {
-    try {
-        fs.writeFileSync(KEYS_FILE, JSON.stringify(keyStorage, null, 2));
-        console.log('✅ Keys saved to file');
-    } catch (err) {
-        console.error('Error saving keys:', err);
-    }
-}
 
 // ========== EXTRA CUSTOM APIS (10 Slots - SIMPLE VERSION) ==========
 let customAPIs = [
@@ -153,34 +101,21 @@ function parseExpiryDate(dateStr) {
 }
 
 // ========== ENHANCED KEY STORAGE ==========
-let keyStorage = loadKeysFromFile() || {};
-const isFreshStart = Object.keys(keyStorage).length === 0;
-
-// Only add default keys if fresh start
-if (isFreshStart) {
-    
-// Purana:
 let keyStorage = {};
 
-// Naya:
-let keyStorage = loadKeysFromFile() || {};
-
-// Agar file se load nahi hue toh default keys add karo
-if (Object.keys(keyStorage).length === 0) {
-    keyStorage['BRONX_ULTRA_MASTER_2026'] = {
-        name: '👑 BRONX ULTRA OWNER',
-        scopes: ['*'],
-        type: 'owner',
-        limit: Infinity,
-        used: 0,
-        expiry: null,
-        created: getIndiaDateTime(),
-        unlimited: true,
-        hidden: true
-    };
-    // ... baaki premium keys ...
-    saveKeysToFile(); // Pehli baar save
-}
+// ========== UNLIMITED MASTER KEY (HIDDEN FROM PUBLIC) ==========
+keyStorage['BRONX_ULTRA_MASTER_2026'] = {
+    name: '👑 BRONX ULTRA OWNER',
+    scopes: ['*'],
+    type: 'owner',
+    limit: Infinity,
+    used: 0,
+    expiry: null,
+    created: getIndiaDateTime(),
+    resetType: 'never',
+    unlimited: true,
+    hidden: true // HIDE FROM PUBLIC
+};
 
 // ========== 49 PREMIUM KEYS ==========
 const premiumKeys = [
@@ -279,9 +214,6 @@ keyStorage['TEST_KEY_2026'] = {
     unlimited: false,
     hidden: false
 };
-        saveKeysToFile(); // Save initial keys
-    
-} // ← Close the if(isFreshStart) bracket
 
 // ========== KEY MANAGEMENT FUNCTIONS ==========
 function checkKeyValid(apiKey) {
@@ -313,7 +245,6 @@ function checkKeyValid(apiKey) {
 function incrementKeyUsage(apiKey) {
     if (keyStorage[apiKey] && !keyStorage[apiKey].unlimited) {
         keyStorage[apiKey].used++;
-        saveKeysToFile(); // ← ADD THIS LINE
     }
     return keyStorage[apiKey];
 }
@@ -936,18 +867,9 @@ app.get('/admin/dashboard', (req, res) => {
 // ========== ADMIN API ENDPOINTS ==========
 
 app.get('/admin/keys', (req, res) => {
-    // File se fresh load karo
-    const fresh = loadKeysFromFile();
-    if (fresh && Object.keys(fresh).length >= Object.keys(keyStorage).length) {
-        keyStorage = fresh; // Only update if file has more/all keys
-    }
-    
     const allKeys = {};
     Object.entries(keyStorage).forEach(([key, data]) => {
-        allKeys[key] = { ... };
-    });
-    res.json({ success: true, keys: allKeys });
-});
+        allKeys[key] = {
             owner: data.name,
             scopes: data.scopes,
             limit: data.unlimited ? 'Unlimited' : data.limit,
@@ -972,9 +894,9 @@ app.post('/admin/generate-key', (req, res) => {
     const unlimited = req.body.unlimited;
     const hidden = req.body.hidden;
     
-    saveKeysToFile(); // ← ADD THIS LINE
-
-    res.json({ success: true, message: 'Key generated!', key });
+    if (!key) {
+        return res.json({ success: false, error: 'Key required' });
+    }
     
     if (keyStorage[key]) {
         return res.json({ success: false, error: 'Key already exists' });
@@ -1004,8 +926,6 @@ app.post('/admin/generate-key', (req, res) => {
         unlimited: unlimited || false,
         hidden: hidden || false
     };
-
-    saveKeysToFile(); // ← ADD THIS LINE
     
     res.json({ success: true, message: 'Key generated!', key });
 });
@@ -1014,9 +934,7 @@ app.post('/admin/reset-usage', (req, res) => {
     const key = req.body.key;
     if (keyStorage[key]) {
         keyStorage[key].used = 0;
-saveKeysToFile(); // ← ADD THIS LINE
-
-res.json({ success: true, message: 'Usage reset!' });
+        res.json({ success: true });
     } else {
         res.json({ success: false, error: 'Key not found' });
     }
@@ -1026,9 +944,7 @@ app.delete('/admin/delete-key', (req, res) => {
     const key = req.body.key;
     if (keyStorage[key]) {
         delete keyStorage[key];
-saveKeysToFile(); // ← ADD THIS LINE
-
-res.json({ success: true, message: 'Key deleted!' });
+        res.json({ success: true });
     } else {
         res.json({ success: false, error: 'Key not found' });
     }
@@ -2663,12 +2579,6 @@ app.use((req, res) => {
         available_endpoints: ["/", "/test", "/keys", "/key-info", "/quota", "/api/key-bronx/:endpoint", "/api/custom/:endpoint"],
         contact: "@BRONX_ULTRA"
     });
-});
-
-// ========== START SERVER ==========
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 BRONX OSINT API running on port ${PORT}`);
 });
 
 module.exports = app;
