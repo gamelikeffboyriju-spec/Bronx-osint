@@ -2,6 +2,30 @@ const express = require('express');
 const axios = require('axios');
 const fs = require('fs');      // ← ADD THIS LINE
 const path = require('path');  // ← ADD THIS LINE
+const fs = require('fs');
+const path = require('path');
+const KEYS_FILE = path.join('/tmp', 'bronx_keys.json');
+
+// Load keys from file
+function loadKeysFromFile() {
+    try {
+        if (fs.existsSync(KEYS_FILE)) {
+            const data = fs.readFileSync(KEYS_FILE, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch(e) {}
+    return null;
+}
+
+// Save keys to file - TURANT CALL HOTA HAI
+function saveKeysToFile() {
+    try {
+        fs.writeFileSync(KEYS_FILE, JSON.stringify(keyStorage, null, 2));
+        console.log('✅ Keys saved to file!');
+    } catch(e) {
+        console.error('Save error:', e);
+    }
+}
 
 const app = express();
 
@@ -135,7 +159,14 @@ const isFreshStart = Object.keys(keyStorage).length === 0;
 // Only add default keys if fresh start
 if (isFreshStart) {
     
-    // ========== UNLIMITED MASTER KEY ==========
+// Purana:
+let keyStorage = {};
+
+// Naya:
+let keyStorage = loadKeysFromFile() || {};
+
+// Agar file se load nahi hue toh default keys add karo
+if (Object.keys(keyStorage).length === 0) {
     keyStorage['BRONX_ULTRA_MASTER_2026'] = {
         name: '👑 BRONX ULTRA OWNER',
         scopes: ['*'],
@@ -144,10 +175,12 @@ if (isFreshStart) {
         used: 0,
         expiry: null,
         created: getIndiaDateTime(),
-        resetType: 'never',
         unlimited: true,
         hidden: true
     };
+    // ... baaki premium keys ...
+    saveKeysToFile(); // Pehli baar save
+}
 
 // ========== 49 PREMIUM KEYS ==========
 const premiumKeys = [
@@ -903,15 +936,18 @@ app.get('/admin/dashboard', (req, res) => {
 // ========== ADMIN API ENDPOINTS ==========
 
 app.get('/admin/keys', (req, res) => {
-    // Reload from file to get latest
-    const fileKeys = loadKeysFromFile();
-    if (fileKeys) {
-        keyStorage = fileKeys;
+    // File se fresh load karo
+    const fresh = loadKeysFromFile();
+    if (fresh && Object.keys(fresh).length >= Object.keys(keyStorage).length) {
+        keyStorage = fresh; // Only update if file has more/all keys
     }
     
     const allKeys = {};
     Object.entries(keyStorage).forEach(([key, data]) => {
-        allKeys[key] = {
+        allKeys[key] = { ... };
+    });
+    res.json({ success: true, keys: allKeys });
+});
             owner: data.name,
             scopes: data.scopes,
             limit: data.unlimited ? 'Unlimited' : data.limit,
@@ -936,9 +972,9 @@ app.post('/admin/generate-key', (req, res) => {
     const unlimited = req.body.unlimited;
     const hidden = req.body.hidden;
     
-    if (!key) {
-        return res.json({ success: false, error: 'Key required' });
-    }
+    saveKeysToFile(); // ← ADD THIS LINE
+
+    res.json({ success: true, message: 'Key generated!', key });
     
     if (keyStorage[key]) {
         return res.json({ success: false, error: 'Key already exists' });
@@ -978,8 +1014,9 @@ app.post('/admin/reset-usage', (req, res) => {
     const key = req.body.key;
     if (keyStorage[key]) {
         keyStorage[key].used = 0;
-        saveKeysToFile(); // ← ADD THIS LINE
-        res.json({ success: true });
+saveKeysToFile(); // ← ADD THIS LINE
+
+res.json({ success: true, message: 'Usage reset!' });
     } else {
         res.json({ success: false, error: 'Key not found' });
     }
@@ -989,8 +1026,9 @@ app.delete('/admin/delete-key', (req, res) => {
     const key = req.body.key;
     if (keyStorage[key]) {
         delete keyStorage[key];
-        saveKeysToFile(); // ← ADD THIS LINE
-        res.json({ success: true });
+saveKeysToFile(); // ← ADD THIS LINE
+
+res.json({ success: true, message: 'Key deleted!' });
     } else {
         res.json({ success: false, error: 'Key not found' });
     }
