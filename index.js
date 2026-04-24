@@ -1,6 +1,121 @@
 const express = require('express');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ========== PERMANENT FILE STORAGE ==========
+const DATA_DIR = path.join(__dirname, 'data');
+const KEYS_FILE = path.join(DATA_DIR, 'keys.json');
+
+// Create data folder if not exists
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    console.log('📁 Created data folder');
+}
+
+// Create keys file if not exists
+if (!fs.existsSync(KEYS_FILE)) {
+    fs.writeFileSync(KEYS_FILE, '{}', 'utf8');
+    console.log('📄 Created keys.json file');
+}
+
+// ========== LOAD KEYS FROM FILE (PERMANENT) ==========
+function loadKeysFromDisk() {
+    try {
+        const raw = fs.readFileSync(KEYS_FILE, 'utf8');
+        const data = JSON.parse(raw);
+        console.log(`✅ Loaded ${Object.keys(data).length} keys from disk`);
+        return data;
+    } catch (err) {
+        console.error('❌ Failed to load keys:', err.message);
+        return {};
+    }
+}
+
+// ========== SAVE KEYS TO FILE (IMMEDIATE) ==========
+function saveKeysToDisk() {
+    try {
+        const clean = {};
+        Object.entries(keyStorage).forEach(([k, v]) => {
+            clean[k] = { ...v };
+            // Convert Date to string for JSON
+            if (clean[k].expiry instanceof Date) {
+                clean[k].expiry = clean[k].expiry.toISOString();
+            }
+            if (clean[k].expiryDate instanceof Date) {
+                clean[k].expiryDate = clean[k].expiryDate.toISOString();
+            }
+        });
+        fs.writeFileSync(KEYS_FILE, JSON.stringify(clean, null, 2), 'utf8');
+        console.log(`💾 SAVED to disk! Total keys: ${Object.keys(clean).length}`);
+        return true;
+    } catch (err) {
+        console.error('❌ SAVE FAILED:', err.message);
+        return false;
+    }
+}
+
+// ========== INITIALIZE KEY STORAGE ==========
+let keyStorage = {};
+
+// Load existing keys FIRST
+const diskKeys = loadKeysFromDisk();
+
+if (Object.keys(diskKeys).length > 0) {
+    // Keys exist on disk - USE THEM
+    keyStorage = diskKeys;
+    console.log('📂 Using saved keys from disk');
+} else {
+    // No keys on disk - Add defaults
+    console.log('🆕 Adding default keys...');
+    
+    keyStorage['BRONX_ULTRA_MASTER_2026'] = {
+        name: '👑 OWNER',
+        scopes: ['*'],
+        type: 'owner',
+        limit: Infinity,
+        used: 0,
+        expiry: null,
+        expiryStr: 'Never',
+        created: new Date().toISOString(),
+        unlimited: true,
+        hidden: true
+    };
+    
+    keyStorage['DEMO_KEY_2026'] = {
+        name: '🎁 Demo User',
+        scopes: ['number', 'aadhar', 'pincode'],
+        type: 'demo',
+        limit: 10,
+        used: 0,
+        expiry: null,
+        expiryStr: '31-12-2026',
+        created: new Date().toISOString(),
+        unlimited: false,
+        hidden: false
+    };
+    
+    keyStorage['TEST_KEY_2026'] = {
+        name: '🧪 Test User',
+        scopes: ['number'],
+        type: 'test',
+        limit: 5,
+        used: 0,
+        expiry: null,
+        expiryStr: '30-06-2026',
+        created: new Date().toISOString(),
+        unlimited: false,
+        hidden: false
+    };
+    
+    // SAVE defaults to disk
+    saveKeysToDisk();
+    console.log('✅ Default keys saved to disk');
+}
 const app = express();
 
 // ========== CONFIG ==========
@@ -864,102 +979,174 @@ app.get('/admin/dashboard', (req, res) => {
     res.send(html);
 });
 
-// ========== ADMIN API ENDPOINTS ==========
+// ========== ADMIN API ENDPOINTS (WITH PERMANENT SAVE) ==========
 
+// Get all keys
 app.get('/admin/keys', (req, res) => {
     const allKeys = {};
     Object.entries(keyStorage).forEach(([key, data]) => {
         allKeys[key] = {
-            owner: data.name,
-            scopes: data.scopes,
-            limit: data.unlimited ? 'Unlimited' : data.limit,
-            used: data.used,
+            owner: data.name || 'Unknown',
+            scopes: data.scopes || [],
+            limit: data.unlimited ? 'Unlimited' : (data.limit || 0),
+            used: data.used || 0,
             expiry: data.expiryStr || 'Never',
-            hidden: data.hidden || false
+            hidden: data.hidden || false,
+            type: data.type || 'premium'
         };
     });
-    res.json({ success: true, keys: allKeys });
+    
+    res.json({ 
+        success: true, 
+        keys: allKeys,
+        total: Object.keys(allKeys).length,
+        saved_on_disk: true
+    });
 });
 
-// ✅ FIXED: Generate key WITH FILE SAVE
+// Generate NEW KEY - SAVED FOREVER!
 app.post('/admin/generate-key', (req, res) => {
-    console.log('📥 Generate key body:', req.body);
-    
-    const key = req.body.key;
-    const name = req.body.name;
-    const scopes = req.body.scopes;
-    const limit = req.body.limit;
-    const expiry = req.body.expiry;
-    const unlimited = req.body.unlimited;
-    const hidden = req.body.hidden;
-    
-    if (!key) {
-        return res.json({ success: false, error: 'Key required' });
-    }
-    
-    if (keyStorage[key]) {
-        return res.json({ success: false, error: 'Key already exists' });
-    }
-    
-    let expiryDate = null;
-    let expiryStr = null;
-    
-    if (expiry && expiry !== 'never') {
-        const parts = expiry.split('-');
-        if (parts.length === 3) {
-            expiryDate = new Date(parts[2], parts[1] - 1, parts[0], 23, 59, 59);
-            expiryStr = expiry;
+    try {
+        console.log('📥 REQUEST:', JSON.stringify(req.body));
+        
+        const { key, name, scopes, limit, expiry, unlimited, hidden } = req.body;
+        
+        // Validation
+        if (!key || key.trim() === '') {
+            return res.json({ success: false, error: '❌ Key name required!' });
         }
+        
+        if (keyStorage[key]) {
+            return res.json({ success: false, error: '❌ Key already exists!' });
+        }
+        
+        // Parse expiry
+        let expiryDate = null;
+        let expiryStr = 'Never';
+        
+        if (expiry && expiry !== 'never' && expiry !== 'Never') {
+            const parts = String(expiry).split('-');
+            if (parts.length === 3) {
+                const d = parseInt(parts[0]);
+                const m = parseInt(parts[1]) - 1;
+                const y = parseInt(parts[2]);
+                expiryDate = new Date(y, m, d, 23, 59, 59);
+                expiryStr = expiry;
+            }
+        }
+        
+        // Create key data
+        keyStorage[key] = {
+            name: name || 'Premium User',
+            scopes: Array.isArray(scopes) ? scopes : ['number'],
+            type: 'premium',
+            limit: unlimited ? Infinity : (parseInt(limit) || 100),
+            used: 0,
+            expiry: expiryDate,
+            expiryDate: expiryDate,
+            expiryStr: expiryStr,
+            created: new Date().toISOString(),
+            createdDate: new Date().toISOString(),
+            unlimited: unlimited === true || unlimited === 'true',
+            hidden: hidden === true || hidden === 'true'
+        };
+        
+        // ⚡⚡⚡ IMMEDIATELY SAVE TO DISK! ⚡⚡⚡
+        const saved = saveKeysToDisk();
+        
+        if (!saved) {
+            // If save failed, remove from memory too
+            delete keyStorage[key];
+            return res.json({ success: false, error: '❌ Failed to save to disk!' });
+        }
+        
+        console.log(`✅ KEY GENERATED & SAVED: ${key}`);
+        console.log(`📊 Total keys now: ${Object.keys(keyStorage).length}`);
+        
+        res.json({ 
+            success: true, 
+            message: '✅ Key generated & saved permanently!', 
+            key: key,
+            saved_to_disk: true,
+            total_keys: Object.keys(keyStorage).length
+        });
+        
+    } catch (error) {
+        console.error('❌ Generate error:', error);
+        res.json({ success: false, error: error.message });
     }
-    
-    keyStorage[key] = {
-        name: name || 'User',
-        scopes: scopes || ['number'],
-        type: 'premium',
-        limit: unlimited ? Infinity : (parseInt(limit) || 100),
-        used: 0,
-        expiry: expiryDate,
-        expiryStr: expiryStr,
-        created: getIndiaDateTime(),
-        resetType: 'never',
-        unlimited: unlimited || false,
-        hidden: hidden || false
-    };
-    
-    // ⚡ SAVE TO FILE - LIFE TIME TAK RAHEGA!
-    saveKeys();
-    console.log('💾 Key saved! Total keys:', Object.keys(keyStorage).length);
-    
-    res.json({ success: true, message: 'Key generated!', key });
 });
 
-// ✅ FIXED: Reset usage WITH FILE SAVE
+// Reset usage - SAVED
 app.post('/admin/reset-usage', (req, res) => {
     const key = req.body.key;
-    if (keyStorage[key]) {
-        keyStorage[key].used = 0;
-        saveKeys(); // ⚡ SAVE
-        console.log('🔄 Usage reset for:', key);
-        res.json({ success: true });
-    } else {
-        res.json({ success: false, error: 'Key not found' });
+    
+    if (!key || !keyStorage[key]) {
+        return res.json({ success: false, error: 'Key not found' });
     }
+    
+    keyStorage[key].used = 0;
+    saveKeysToDisk(); // ⚡ SAVE
+    
+    console.log(`🔄 Usage reset for: ${key}`);
+    res.json({ success: true, message: 'Usage reset & saved!' });
 });
 
-// ✅ FIXED: Delete key WITH FILE SAVE
+// Delete key - REMOVED FROM DISK
 app.delete('/admin/delete-key', (req, res) => {
     const key = req.body.key;
-    if (keyStorage[key]) {
-        delete keyStorage[key];
-        saveKeys(); // ⚡ SAVE
-        console.log('🗑️ Key deleted:', key);
-        res.json({ success: true });
-    } else {
-        res.json({ success: false, error: 'Key not found' });
+    
+    if (!key || !keyStorage[key]) {
+        return res.json({ success: false, error: 'Key not found' });
+    }
+    
+    delete keyStorage[key];
+    saveKeysToDisk(); // ⚡ SAVE
+    
+    console.log(`🗑️ Deleted: ${key}`);
+    res.json({ success: true, message: 'Key deleted from disk!' });
+});
+
+// Force save all keys (backup)
+app.post('/admin/force-save', (req, res) => {
+    const saved = saveKeysToDisk();
+    res.json({ 
+        success: saved, 
+        message: saved ? '✅ All keys saved!' : '❌ Save failed!',
+        total_keys: Object.keys(keyStorage).length 
+    });
+});
+
+// Check if keys are saved
+app.get('/admin/check-save', (req, res) => {
+    try {
+        const fileExists = fs.existsSync(KEYS_FILE);
+        const fileSize = fileExists ? fs.statSync(KEYS_FILE).size : 0;
+        const memoryKeys = Object.keys(keyStorage).length;
+        
+        let diskKeys = 0;
+        if (fileExists) {
+            const raw = fs.readFileSync(KEYS_FILE, 'utf8');
+            diskKeys = Object.keys(JSON.parse(raw)).length;
+        }
+        
+        res.json({
+            success: true,
+            memory_keys: memoryKeys,
+            disk_keys: diskKeys,
+            file_exists: fileExists,
+            file_size_bytes: fileSize,
+            synced: memoryKeys === diskKeys,
+            file_path: KEYS_FILE
+        });
+    } catch (err) {
+        res.json({ success: false, error: err.message });
     }
 });
 
-console.log('✅ Admin Panel ready at /admin');
+console.log('✅ Admin Panel with PERMANENT storage ready!');
+console.log(`📁 Keys stored at: ${KEYS_FILE}`);
+
 
 
 // ========== SERVE ENHANCED HTML UI WITH DARK/LIGHT MODE ==========
