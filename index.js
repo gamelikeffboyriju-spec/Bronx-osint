@@ -1,120 +1,61 @@
+// ========== REQUIRED MODULES ==========
 const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
+// ========== EXPRESS APP (SIRF EK BAAR!) ==========
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ========== PERMANENT FILE STORAGE ==========
+// ========== FILE STORAGE SETUP ==========
 const DATA_DIR = path.join(__dirname, 'data');
 const KEYS_FILE = path.join(DATA_DIR, 'keys.json');
 
-// Create data folder if not exists
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    console.log('📁 Created data folder');
-}
-
-// Create keys file if not exists
-if (!fs.existsSync(KEYS_FILE)) {
-    fs.writeFileSync(KEYS_FILE, '{}', 'utf8');
-    console.log('📄 Created keys.json file');
-}
-
-// ========== LOAD KEYS FROM FILE (PERMANENT) ==========
-function loadKeysFromDisk() {
-    try {
-        const raw = fs.readFileSync(KEYS_FILE, 'utf8');
-        const data = JSON.parse(raw);
-        console.log(`✅ Loaded ${Object.keys(data).length} keys from disk`);
-        return data;
-    } catch (err) {
-        console.error('❌ Failed to load keys:', err.message);
-        return {};
+// Create data folder
+try {
+    if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
     }
+    if (!fs.existsSync(KEYS_FILE)) {
+        fs.writeFileSync(KEYS_FILE, '{}', 'utf8');
+    }
+} catch (err) {
+    console.error('Setup error:', err.message);
 }
 
-// ========== SAVE KEYS TO FILE (IMMEDIATE) ==========
-function saveKeysToDisk() {
+// ========== LOAD & SAVE FUNCTIONS ==========
+function saveKeys() {
     try {
         const clean = {};
         Object.entries(keyStorage).forEach(([k, v]) => {
             clean[k] = { ...v };
-            // Convert Date to string for JSON
             if (clean[k].expiry instanceof Date) {
                 clean[k].expiry = clean[k].expiry.toISOString();
             }
-            if (clean[k].expiryDate instanceof Date) {
-                clean[k].expiryDate = clean[k].expiryDate.toISOString();
-            }
         });
         fs.writeFileSync(KEYS_FILE, JSON.stringify(clean, null, 2), 'utf8');
-        console.log(`💾 SAVED to disk! Total keys: ${Object.keys(clean).length}`);
+        console.log('💾 Saved:', Object.keys(clean).length, 'keys');
         return true;
     } catch (err) {
-        console.error('❌ SAVE FAILED:', err.message);
+        console.error('Save error:', err.message);
         return false;
     }
 }
 
-// ========== INITIALIZE KEY STORAGE ==========
-let keyStorage = {};
-
-// Load existing keys FIRST
-const diskKeys = loadKeysFromDisk();
-
-if (Object.keys(diskKeys).length > 0) {
-    // Keys exist on disk - USE THEM
-    keyStorage = diskKeys;
-    console.log('📂 Using saved keys from disk');
-} else {
-    // No keys on disk - Add defaults
-    console.log('🆕 Adding default keys...');
-    
-    keyStorage['BRONX_ULTRA_MASTER_2026'] = {
-        name: '👑 OWNER',
-        scopes: ['*'],
-        type: 'owner',
-        limit: Infinity,
-        used: 0,
-        expiry: null,
-        expiryStr: 'Never',
-        created: new Date().toISOString(),
-        unlimited: true,
-        hidden: true
-    };
-    
-    keyStorage['DEMO_KEY_2026'] = {
-        name: '🎁 Demo User',
-        scopes: ['number', 'aadhar', 'pincode'],
-        type: 'demo',
-        limit: 10,
-        used: 0,
-        expiry: null,
-        expiryStr: '31-12-2026',
-        created: new Date().toISOString(),
-        unlimited: false,
-        hidden: false
-    };
-    
-    keyStorage['TEST_KEY_2026'] = {
-        name: '🧪 Test User',
-        scopes: ['number'],
-        type: 'test',
-        limit: 5,
-        used: 0,
-        expiry: null,
-        expiryStr: '30-06-2026',
-        created: new Date().toISOString(),
-        unlimited: false,
-        hidden: false
-    };
-    
-    // SAVE defaults to disk
-    saveKeysToDisk();
-    console.log('✅ Default keys saved to disk');
+function loadKeys() {
+    try {
+        if (fs.existsSync(KEYS_FILE)) {
+            const data = fs.readFileSync(KEYS_FILE, 'utf8');
+            const parsed = JSON.parse(data);
+            console.log('📂 Loaded:', Object.keys(parsed).length, 'keys');
+            return parsed;
+        }
+    } catch (err) {
+        console.error('Load error:', err.message);
+    }
+    return {};
 }
 
 // ========== CONFIG ==========
