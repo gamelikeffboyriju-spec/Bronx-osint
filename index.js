@@ -116,7 +116,6 @@ if (Object.keys(diskKeys).length > 0) {
     saveKeysToDisk();
     console.log('✅ Default keys saved to disk');
 }
-const app = express();
 
 // ========== CONFIG ==========
 const REAL_API_BASE = 'https://ft-osint-api.duckdns.org/api';
