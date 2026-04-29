@@ -1,62 +1,7 @@
-// ========== REQUIRED MODULES ==========
 const express = require('express');
 const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
 
-// ========== EXPRESS APP (SIRF EK BAAR!) ==========
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// ========== FILE STORAGE SETUP ==========
-const DATA_DIR = path.join(__dirname, 'data');
-const KEYS_FILE = path.join(DATA_DIR, 'keys.json');
-
-// Create data folder
-try {
-    if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    if (!fs.existsSync(KEYS_FILE)) {
-        fs.writeFileSync(KEYS_FILE, '{}', 'utf8');
-    }
-} catch (err) {
-    console.error('Setup error:', err.message);
-}
-
-// ========== LOAD & SAVE FUNCTIONS ==========
-function saveKeys() {
-    try {
-        const clean = {};
-        Object.entries(keyStorage).forEach(([k, v]) => {
-            clean[k] = { ...v };
-            if (clean[k].expiry instanceof Date) {
-                clean[k].expiry = clean[k].expiry.toISOString();
-            }
-        });
-        fs.writeFileSync(KEYS_FILE, JSON.stringify(clean, null, 2), 'utf8');
-        console.log('💾 Saved:', Object.keys(clean).length, 'keys');
-        return true;
-    } catch (err) {
-        console.error('Save error:', err.message);
-        return false;
-    }
-}
-
-function loadKeys() {
-    try {
-        if (fs.existsSync(KEYS_FILE)) {
-            const data = fs.readFileSync(KEYS_FILE, 'utf8');
-            const parsed = JSON.parse(data);
-            console.log('📂 Loaded:', Object.keys(parsed).length, 'keys');
-            return parsed;
-        }
-    } catch (err) {
-        console.error('Load error:', err.message);
-    }
-    return {};
-}
 
 // ========== CONFIG ==========
 const REAL_API_BASE = 'https://ft-osint-api.duckdns.org/api';
@@ -66,23 +11,23 @@ const REAL_API_KEY = 'backup-bot';
 let customAPIs = [
     { 
         id: 1, 
-        name: 'Number Info backup ✅', 
-        endpoint: 'bronx-api', 
+        name: 'Number Info backup âœ…', 
+        endpoint: 'bronx-api-bromx', 
         param: 'num', 
         example: '9876543210', 
         desc: 'india Number Lookup Vip Bronx api',
-        category: '🔧 Custom APIs',
+        category: 'ðŸ”§ Custom APIs',
         visible: true,
-        realAPI: 'https://bronx-api-info-ultra.vercel.app/api/number?num={param}'
+        realAPI: 'https://bronx-api-bromx.vercel.app/search?num={param}'
     },
     { 
         id: 2, 
-        name: 'Vehicle Details Api 🚕', 
+        name: 'Vehicle Details Api ðŸš•', 
         endpoint: 'rc-details', 
         param: 'ca_number', 
         example: 'MH02FZ0555', 
         desc: 'Vehicle RC Details Lookup',
-        category: '🔧 Custom APIs',
+        category: 'ðŸ”§ Custom APIs',
         visible: true,
         realAPI: 'https://bronx-rc-api.vercel.app/?ca_number={param}'
     },
@@ -93,37 +38,37 @@ let customAPIs = [
         param: 'aadhar', 
         example: '393933081942', 
         desc: 'Aadhar Number Lookup',
-        category: '🔧 Custom APIs',
+        category: 'ðŸ”§ Custom APIs',
         visible: true,
-        realAPI: 'https://bronx-adhr.vercel.app/api/aadhaar?num={param}'
+        realAPI: 'https://bronx-adhar-api.vercel.app/aadhar={param}'
     },
     { 
         id: 4, 
-        name: '📧 Email Lookup API', 
+        name: 'ðŸ“§ Email Lookup API', 
         endpoint: 'email-lookup', 
         param: 'mail', 
         example: 'user@gmail.com', 
         desc: 'Email Information Lookup',
-        category: '🔧 Custom APIs',
+        category: 'ðŸ”§ Custom APIs',
         visible: true,
         realAPI: 'https://bronx-mail-api.vercel.app/mail={param}'
     },
     { 
         id: 5, 
-        name: '📲 Telegram Number API', 
+        name: 'ðŸ“² Telegram Number API', 
         endpoint: 'telegram-num', 
         param: 'id', 
         example: '7530266953', 
         desc: 'Telegram Number Lookup',
-        category: '🔧 Custom APIs',
+        category: 'ðŸ”§ Custom APIs',
         visible: true,
-        realAPI: 'https://bronx-tg-ultra.vercel.app/tg?id={param}'
+        realAPI: 'http://45.91.248.51:3000/api/tgnum?id={param}'
     },
-    { id: 6, name: 'Custom API 6', endpoint: '', param: '', example: '', desc: '', category: '🔧 Custom APIs', visible: false, realAPI: '' },
-    { id: 7, name: 'Custom API 7', endpoint: '', param: '', example: '', desc: '', category: '🔧 Custom APIs', visible: false, realAPI: '' },
-    { id: 8, name: 'Custom API 8', endpoint: '', param: '', example: '', desc: '', category: '🔧 Custom APIs', visible: false, realAPI: '' },
-    { id: 9, name: 'Custom API 9', endpoint: '', param: '', example: '', desc: '', category: '🔧 Custom APIs', visible: false, realAPI: '' },
-    { id: 10, name: 'Custom API 10', endpoint: '', param: '', example: '', desc: '', category: '🔧 Custom APIs', visible: false, realAPI: '' }
+    { id: 6, name: 'Custom API 6', endpoint: '', param: '', example: '', desc: '', category: 'ðŸ”§ Custom APIs', visible: false, realAPI: '' },
+    { id: 7, name: 'Custom API 7', endpoint: '', param: '', example: '', desc: '', category: 'ðŸ”§ Custom APIs', visible: false, realAPI: '' },
+    { id: 8, name: 'Custom API 8', endpoint: '', param: '', example: '', desc: '', category: 'ðŸ”§ Custom APIs', visible: false, realAPI: '' },
+    { id: 9, name: 'Custom API 9', endpoint: '', param: '', example: '', desc: '', category: 'ðŸ”§ Custom APIs', visible: false, realAPI: '' },
+    { id: 10, name: 'Custom API 10', endpoint: '', param: '', example: '', desc: '', category: 'ðŸ”§ Custom APIs', visible: false, realAPI: '' }
 ];
 
 // ========== INDIA TIME HELPER ==========
@@ -160,7 +105,7 @@ let keyStorage = {};
 
 // ========== UNLIMITED MASTER KEY (HIDDEN FROM PUBLIC) ==========
 keyStorage['BRONX_ULTRA_MASTER_2026'] = {
-    name: '👑 BRONX ULTRA OWNER',
+    name: 'ðŸ‘‘ BRONX ULTRA OWNER',
     scopes: ['*'],
     type: 'owner',
     limit: Infinity,
@@ -174,54 +119,54 @@ keyStorage['BRONX_ULTRA_MASTER_2026'] = {
 
 // ========== 49 PREMIUM KEYS ==========
 const premiumKeys = [
-    { key: 'demo1', name: '📱 Number Hunter Pro', scopes: ['number', 'numv2', 'adv'], limit: 10, expiry: '31-12-2026' },
-    { key: 'demo2', name: '🆔 Aadhar Master', scopes: ['aadhar'], limit: 5, expiry: '30-06-2026' },
-    { key: 'demo3', name: '🌐 Social Intel', scopes: ['insta', 'git', 'tg'], limit: 20, expiry: '31-12-2026' },
-    { key: 'PREMIUM_VEHICLE_001', name: '🚗 Vehicle Tracker Pro', scopes: ['vehicle', 'rc'], limit: 75, expiry: '31-10-2026' },
-    { key: 'PREMIUM_GAMING_001', name: '🎮 Gaming Intel', scopes: ['ff', 'bgmi'], limit: 150, expiry: '31-12-2026' },
-    { key: 'PREMIUM_FINANCE_001', name: '💰 Finance Pro', scopes: ['upi', 'ifsc', 'pan'], limit: 60, expiry: '30-09-2026' },
-    { key: 'PREMIUM_LOCATION_001', name: '📍 Location Master', scopes: ['pincode', 'ip'], limit: 100, expiry: '31-12-2026' },
-    { key: 'PREMIUM_NAME_001', name: '🔍 Name Search Pro', scopes: ['name'], limit: 80, expiry: '31-08-2026' },
-    { key: 'PREMIUM_PAK_001', name: '🇵🇰 Pakistan Intel', scopes: ['pk', 'pkv2'], limit: 50, expiry: '31-12-2026' },
-    { key: 'PREMIUM_COMBO_001', name: '🎯 Combo Pack 1', scopes: ['number', 'aadhar', 'pan'], limit: 120, expiry: '31-12-2026' },
-    { key: 'PREMIUM_COMBO_002', name: '🎯 Combo Pack 2', scopes: ['vehicle', 'rc', 'pincode'], limit: 90, expiry: '30-11-2026' },
-    { key: 'PREMIUM_COMBO_003', name: '🎯 Combo Pack 3', scopes: ['insta', 'git', 'tg', 'ff'], limit: 180, expiry: '31-12-2026' },
-    { key: 'PREMIUM_BASIC_001', name: '⭐ Basic User 1', scopes: ['number'], limit: 30, expiry: '31-07-2026' },
-    { key: '000', name: '⭐ Basic User 2', scopes: ['number'], limit: 4000, expiry: '31-08-2028' },
-    { key: 'PREMIUM_BASIC_003', name: '⭐ Basic User 3', scopes: ['number'], limit: 5000, expiry: '29-04-2026' },
-    { key: 'PREMIUM_ADVANCED_001', name: '🌟 Advanced User 1', scopes: ['number', 'numv2', 'adv', 'name'], limit: 200, expiry: '31-12-2026' },
-    { key: 'PREMIUM_ADVANCED_002', name: '🌟 Advanced User 2', scopes: ['aadhar', 'pan', 'upi'], limit: 100, expiry: '31-12-2026' },
-    { key: 'PREMIUM_ADVANCED_003', name: '🌟 Advanced User 3', scopes: ['vehicle', 'rc', 'pincode', 'ip'], limit: 150, expiry: '31-12-2026' },
-    { key: 'PREMIUM_ELITE_001', name: '💎 Elite User 1', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name'], limit: 300, expiry: '31-12-2026' },
-    { key: 'PREMIUM_ELITE_002', name: '💎 Elite User 2', scopes: ['insta', 'git', 'tg', 'ff', 'bgmi'], limit: 250, expiry: '31-12-2026' },
-    { key: 'PREMIUM_BUSINESS_001', name: '🏢 Business Pack 1', scopes: ['number', 'aadhar', 'pan', 'upi', 'ifsc'], limit: 500, expiry: '31-12-2026' },
-    { key: 'PREMIUM_BUSINESS_002', name: '🏢 Business Pack 2', scopes: ['vehicle', 'rc', 'pincode', 'ip', 'name'], limit: 400, expiry: '31-12-2026' },
-    { key: 'PREMIUM_STUDENT_001', name: '🎓 Student Pack 1', scopes: ['number', 'pincode', 'ip'], limit: 50, expiry: '31-12-2026' },
-    { key: 'PREMIUM_STUDENT_002', name: '🎓 Student Pack 2', scopes: ['insta', 'git', 'ff'], limit: 60, expiry: '31-12-2026' },
-    { key: 'PREMIUM_DEV_001', name: '💻 Developer 1', scopes: ['number', 'ip', 'git'], limit: 200, expiry: '31-12-2026' },
-    { key: 'PREMIUM_DEV_002', name: '💻 Developer 2', scopes: ['number', 'numv2', 'adv', 'ip', 'git'], limit: 250, expiry: '31-12-2026' },
-    { key: 'PREMIUM_SECURITY_001', name: '🛡️ Security Pro', scopes: ['aadhar', 'pan', 'vehicle'], limit: 100, expiry: '31-12-2026' },
-    { key: 'PREMIUM_INVESTIGATOR_001', name: '🔎 Investigator', scopes: ['number', 'numv2', 'adv', 'aadhar', 'vehicle', 'rc'], limit: 350, expiry: '31-12-2026' },
-    { key: 'PREMIUM_SOCIALPRO_001', name: '📸 Social Media Pro', scopes: ['insta', 'git', 'tg'], limit: 300, expiry: '31-12-2026' },
-    { key: 'PREMIUM_GAMERPRO_001', name: '🎮 Gamer Pro', scopes: ['ff', 'bgmi'], limit: 200, expiry: '31-12-2026' },
-    { key: 'PREMIUM_FINANCEPRO_001', name: '💵 Finance Pro Max', scopes: ['upi', 'ifsc', 'pan'], limit: 150, expiry: '31-12-2026' },
-    { key: 'PREMIUM_LOCATIONPRO_001', name: '🗺️ Location Pro', scopes: ['pincode', 'ip'], limit: 200, expiry: '31-12-2026' },
-    { key: 'PREMIUM_PREMIUM_001', name: '👔 Premium User 1', scopes: ['number', 'aadhar', 'name', 'pincode'], limit: 150, expiry: '31-12-2026' },
-    { key: 'PREMIUM_PREMIUM_002', name: '👔 Premium User 2', scopes: ['vehicle', 'rc', 'pan', 'upi'], limit: 120, expiry: '30-11-2026' },
-    { key: 'PREMIUM_PREMIUM_003', name: '👔 Premium User 3', scopes: ['insta', 'tg', 'ff', 'bgmi'], limit: 180, expiry: '31-10-2026' },
-    { key: 'PREMIUM_GOLD_001', name: '🥇 Gold Member 1', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'pincode'], limit: 400, expiry: '31-12-2026' },
-    { key: 'PREMIUM_GOLD_002', name: '🥇 Gold Member 2', scopes: ['vehicle', 'rc', 'pan', 'upi', 'ifsc', 'ip'], limit: 350, expiry: '31-12-2026' },
-    { key: 'PREMIUM_PLATINUM_001', name: '💠 Platinum User 1', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'vehicle', 'rc'], limit: 500, expiry: '31-12-2026' },
-    { key: 'PREMIUM_PLATINUM_002', name: '💠 Platinum User 2', scopes: ['insta', 'git', 'tg', 'ff', 'bgmi', 'ip', 'pincode'], limit: 450, expiry: '31-12-2026' },
-    { key: 'PREMIUM_DIAMOND_001', name: '💎 Diamond User', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'pan', 'upi'], limit: 600, expiry: '31-12-2026' },
-    { key: 'PREMIUM_ULTIMATE_001', name: '🏆 Ultimate User', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'vehicle', 'rc', 'pan', 'upi', 'ifsc'], limit: 750, expiry: '31-12-2026' },
-    { key: 'PREMIUM_STARTER_001', name: '🌱 Starter Pack', scopes: ['number', 'pincode'], limit: 25, expiry: '31-07-2026' },
-    { key: 'PREMIUM_STARTER_002', name: '🌱 Starter Pack 2', scopes: ['ip', 'git'], limit: 30, expiry: '31-08-2026' },
-    { key: 'PREMIUM_WEEKLY_001', name: '📅 Weekly Pass', scopes: ['number', 'aadhar', 'name'], limit: 40, expiry: '30-06-2026' },
-    { key: 'PREMIUM_MONTHLY_001', name: '📆 Monthly Pass', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name'], limit: 100, expiry: '31-07-2026' },
-    { key: 'PREMIUM_QUARTERLY_001', name: '📊 Quarterly Pass', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'vehicle', 'rc'], limit: 250, expiry: '30-09-2026' },
-    { key: 'PREMIUM_YEARLY_001', name: '🎯 Yearly Pass', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'vehicle', 'rc', 'pan', 'upi', 'ifsc', 'pincode', 'ip'], limit: 1000, expiry: '31-12-2026' },
-    { key: 'PREMIUM_VIP_001', name: '👑 VIP Member', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'insta', 'git', 'tg'], limit: 500, expiry: '31-12-2026' }
+    { key: 'demo1', name: 'ðŸ“± Number Hunter Pro', scopes: ['number', 'numv2', 'adv'], limit: 10, expiry: '31-12-2026' },
+    { key: 'demo2', name: 'ðŸ†” Aadhar Master', scopes: ['aadhar'], limit: 5, expiry: '30-06-2026' },
+    { key: 'demo3', name: 'ðŸŒ Social Intel', scopes: ['insta', 'git', 'tg'], limit: 20, expiry: '31-12-2026' },
+    { key: 'PREMIUM_VEHICLE_001', name: 'ðŸš— Vehicle Tracker Pro', scopes: ['vehicle', 'rc'], limit: 75, expiry: '31-10-2026' },
+    { key: 'PREMIUM_GAMING_001', name: 'ðŸŽ® Gaming Intel', scopes: ['ff', 'bgmi'], limit: 150, expiry: '31-12-2026' },
+    { key: 'PREMIUM_FINANCE_001', name: 'ðŸ’° Finance Pro', scopes: ['upi', 'ifsc', 'pan'], limit: 60, expiry: '30-09-2026' },
+    { key: 'PREMIUM_LOCATION_001', name: 'ðŸ“ Location Master', scopes: ['pincode', 'ip'], limit: 100, expiry: '31-12-2026' },
+    { key: 'PREMIUM_NAME_001', name: 'ðŸ” Name Search Pro', scopes: ['name'], limit: 80, expiry: '31-08-2026' },
+    { key: 'PREMIUM_PAK_001', name: 'ðŸ‡µðŸ‡° Pakistan Intel', scopes: ['pk', 'pkv2'], limit: 50, expiry: '31-12-2026' },
+    { key: 'PREMIUM_COMBO_001', name: 'ðŸŽ¯ Combo Pack 1', scopes: ['number', 'aadhar', 'pan'], limit: 120, expiry: '31-12-2026' },
+    { key: 'PREMIUM_COMBO_002', name: 'ðŸŽ¯ Combo Pack 2', scopes: ['vehicle', 'rc', 'pincode'], limit: 90, expiry: '30-11-2026' },
+    { key: 'PREMIUM_COMBO_003', name: 'ðŸŽ¯ Combo Pack 3', scopes: ['insta', 'git', 'tg', 'ff'], limit: 180, expiry: '31-12-2026' },
+    { key: 'PREMIUM_BASIC_001', name: 'â­ Basic User 1', scopes: ['number'], limit: 30, expiry: '31-07-2026' },
+    { key: 'PREMIUM_BASIC_002', name: 'â­ Basic User 2', scopes: ['pincode'], limit: 40, expiry: '31-08-2026' },
+    { key: 'PREMIUM_BASIC_003', name: 'â­ Basic User 3', scopes: ['ip'], limit: 50, expiry: '30-09-2026' },
+    { key: 'PREMIUM_ADVANCED_001', name: 'ðŸŒŸ Advanced User 1', scopes: ['number', 'numv2', 'adv', 'name'], limit: 200, expiry: '31-12-2026' },
+    { key: 'PREMIUM_ADVANCED_002', name: 'ðŸŒŸ Advanced User 2', scopes: ['aadhar', 'pan', 'upi'], limit: 100, expiry: '31-12-2026' },
+    { key: 'PREMIUM_ADVANCED_003', name: 'ðŸŒŸ Advanced User 3', scopes: ['vehicle', 'rc', 'pincode', 'ip'], limit: 150, expiry: '31-12-2026' },
+    { key: 'PREMIUM_ELITE_001', name: 'ðŸ’Ž Elite User 1', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name'], limit: 300, expiry: '31-12-2026' },
+    { key: 'PREMIUM_ELITE_002', name: 'ðŸ’Ž Elite User 2', scopes: ['insta', 'git', 'tg', 'ff', 'bgmi'], limit: 250, expiry: '31-12-2026' },
+    { key: 'PREMIUM_BUSINESS_001', name: 'ðŸ¢ Business Pack 1', scopes: ['number', 'aadhar', 'pan', 'upi', 'ifsc'], limit: 500, expiry: '31-12-2026' },
+    { key: 'PREMIUM_BUSINESS_002', name: 'ðŸ¢ Business Pack 2', scopes: ['vehicle', 'rc', 'pincode', 'ip', 'name'], limit: 400, expiry: '31-12-2026' },
+    { key: 'PREMIUM_STUDENT_001', name: 'ðŸŽ“ Student Pack 1', scopes: ['number', 'pincode', 'ip'], limit: 50, expiry: '31-12-2026' },
+    { key: 'PREMIUM_STUDENT_002', name: 'ðŸŽ“ Student Pack 2', scopes: ['insta', 'git', 'ff'], limit: 60, expiry: '31-12-2026' },
+    { key: 'PREMIUM_DEV_001', name: 'ðŸ’» Developer 1', scopes: ['number', 'ip', 'git'], limit: 200, expiry: '31-12-2026' },
+    { key: 'PREMIUM_DEV_002', name: 'ðŸ’» Developer 2', scopes: ['number', 'numv2', 'adv', 'ip', 'git'], limit: 250, expiry: '31-12-2026' },
+    { key: 'PREMIUM_SECURITY_001', name: 'ðŸ›¡ï¸ Security Pro', scopes: ['aadhar', 'pan', 'vehicle'], limit: 100, expiry: '31-12-2026' },
+    { key: 'PREMIUM_INVESTIGATOR_001', name: 'ðŸ”Ž Investigator', scopes: ['number', 'numv2', 'adv', 'aadhar', 'vehicle', 'rc'], limit: 350, expiry: '31-12-2026' },
+    { key: 'PREMIUM_SOCIALPRO_001', name: 'ðŸ“¸ Social Media Pro', scopes: ['insta', 'git', 'tg'], limit: 300, expiry: '31-12-2026' },
+    { key: 'PREMIUM_GAMERPRO_001', name: 'ðŸŽ® Gamer Pro', scopes: ['ff', 'bgmi'], limit: 200, expiry: '31-12-2026' },
+    { key: 'PREMIUM_FINANCEPRO_001', name: 'ðŸ’µ Finance Pro Max', scopes: ['upi', 'ifsc', 'pan'], limit: 150, expiry: '31-12-2026' },
+    { key: 'PREMIUM_LOCATIONPRO_001', name: 'ðŸ—ºï¸ Location Pro', scopes: ['pincode', 'ip'], limit: 200, expiry: '31-12-2026' },
+    { key: 'PREMIUM_PREMIUM_001', name: 'ðŸ‘” Premium User 1', scopes: ['number', 'aadhar', 'name', 'pincode'], limit: 150, expiry: '31-12-2026' },
+    { key: 'PREMIUM_PREMIUM_002', name: 'ðŸ‘” Premium User 2', scopes: ['vehicle', 'rc', 'pan', 'upi'], limit: 120, expiry: '30-11-2026' },
+    { key: 'PREMIUM_PREMIUM_003', name: 'ðŸ‘” Premium User 3', scopes: ['insta', 'tg', 'ff', 'bgmi'], limit: 180, expiry: '31-10-2026' },
+    { key: 'PREMIUM_GOLD_001', name: 'ðŸ¥‡ Gold Member 1', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'pincode'], limit: 400, expiry: '31-12-2026' },
+    { key: 'PREMIUM_GOLD_002', name: 'ðŸ¥‡ Gold Member 2', scopes: ['vehicle', 'rc', 'pan', 'upi', 'ifsc', 'ip'], limit: 350, expiry: '31-12-2026' },
+    { key: 'PREMIUM_PLATINUM_001', name: 'ðŸ’  Platinum User 1', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'vehicle', 'rc'], limit: 500, expiry: '31-12-2026' },
+    { key: 'PREMIUM_PLATINUM_002', name: 'ðŸ’  Platinum User 2', scopes: ['insta', 'git', 'tg', 'ff', 'bgmi', 'ip', 'pincode'], limit: 450, expiry: '31-12-2026' },
+    { key: 'PREMIUM_DIAMOND_001', name: 'ðŸ’Ž Diamond User', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'pan', 'upi'], limit: 600, expiry: '31-12-2026' },
+    { key: 'PREMIUM_ULTIMATE_001', name: 'ðŸ† Ultimate User', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'vehicle', 'rc', 'pan', 'upi', 'ifsc'], limit: 750, expiry: '31-12-2026' },
+    { key: 'PREMIUM_STARTER_001', name: 'ðŸŒ± Starter Pack', scopes: ['number', 'pincode'], limit: 25, expiry: '31-07-2026' },
+    { key: 'PREMIUM_STARTER_002', name: 'ðŸŒ± Starter Pack 2', scopes: ['ip', 'git'], limit: 30, expiry: '31-08-2026' },
+    { key: 'PREMIUM_WEEKLY_001', name: 'ðŸ“… Weekly Pass', scopes: ['number', 'aadhar', 'name'], limit: 40, expiry: '30-06-2026' },
+    { key: 'PREMIUM_MONTHLY_001', name: 'ðŸ“† Monthly Pass', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name'], limit: 100, expiry: '31-07-2026' },
+    { key: 'PREMIUM_QUARTERLY_001', name: 'ðŸ“Š Quarterly Pass', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'vehicle', 'rc'], limit: 250, expiry: '30-09-2026' },
+    { key: 'PREMIUM_YEARLY_001', name: 'ðŸŽ¯ Yearly Pass', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'vehicle', 'rc', 'pan', 'upi', 'ifsc', 'pincode', 'ip'], limit: 1000, expiry: '31-12-2026' },
+    { key: 'PREMIUM_VIP_001', name: 'ðŸ‘‘ VIP Member', scopes: ['number', 'numv2', 'adv', 'aadhar', 'name', 'insta', 'git', 'tg'], limit: 500, expiry: '31-12-2026' }
 ];
 
 // Initialize premium keys
@@ -243,7 +188,7 @@ premiumKeys.forEach(keyData => {
 
 // Demo/Test keys
 keyStorage['DEMO_KEY_2026'] = {
-    name: '🎁 Demo User',
+    name: 'ðŸŽ Demo User',
     scopes: ['number', 'aadhar', 'pincode'],
     type: 'demo',
     limit: 10,
@@ -257,7 +202,7 @@ keyStorage['DEMO_KEY_2026'] = {
 };
 
 keyStorage['TEST_KEY_2026'] = {
-    name: '🧪 Test User',
+    name: 'ðŸ§ª Test User',
     scopes: ['number'],
     type: 'test',
     limit: 5,
@@ -274,13 +219,13 @@ keyStorage['TEST_KEY_2026'] = {
 function checkKeyValid(apiKey) {
     const keyData = keyStorage[apiKey];
     if (!keyData) {
-        return { valid: false, error: '❌ Invalid API Key. Contact @BRONX_ULTRA to purchase.' };
+        return { valid: false, error: 'âŒ Invalid API Key. Contact @BRONX_ULTRA to purchase.' };
     }
     
     if (keyData.expiry && isKeyExpired(keyData.expiry)) {
         return { 
             valid: false, 
-            error: '⏰ Your Key has EXPIRED! Please purchase a new key. Contact @BRONX_ULTRA on Telegram.',
+            error: 'â° Your Key has EXPIRED! Please purchase a new key. Contact @BRONX_ULTRA on Telegram.',
             expired: true,
             expiredDate: keyData.expiryStr
         };
@@ -289,7 +234,7 @@ function checkKeyValid(apiKey) {
     if (!keyData.unlimited && keyData.used >= keyData.limit) {
         return {
             valid: false,
-            error: `🛑 Limit Exhausted! You have used ${keyData.used}/${keyData.limit} requests. Contact @BRONX_ULTRA for more.`,
+            error: `ðŸ›‘ Limit Exhausted! You have used ${keyData.used}/${keyData.limit} requests. Contact @BRONX_ULTRA for more.`,
             limitExhausted: true
         };
     }
@@ -316,31 +261,31 @@ function checkKeyScope(keyData, endpoint) {
     if (keyData.scopes.includes(endpoint)) return { valid: true };
     return { 
         valid: false, 
-        error: `❌ This key cannot access '${endpoint}'. Allowed scopes: ${keyData.scopes.join(', ')}` 
+        error: `âŒ This key cannot access '${endpoint}'. Allowed scopes: ${keyData.scopes.join(', ')}` 
     };
 }
 
 // ========== ENDPOINTS ==========
 const endpoints = {
-    number: { param: 'num', category: '📱 Phone Intelligence', example: '9876543210', desc: 'Indian Mobile Number Lookup' },
-    aadhar: { param: 'num', category: '📱 Phone Intelligence', example: '393933081942', desc: 'Aadhaar Number Lookup' },
-    name: { param: 'name', category: '📱 Phone Intelligence', example: 'abhiraaj', desc: 'Name to Records Search' },
-    numv2: { param: 'num', category: '📱 Phone Intelligence', example: '6205949840', desc: 'Number Info v2' },
-    adv: { param: 'num', category: '📱 Phone Intelligence', example: '9876543210', desc: 'Advanced Phone Lookup' },
-    upi: { param: 'upi', category: '💰 Financial', example: 'example@ybl', desc: 'UPI ID Verification' },
-    ifsc: { param: 'ifsc', category: '💰 Financial', example: 'SBIN0001234', desc: 'IFSC Code Details' },
-    pan: { param: 'pan', category: '💰 Financial', example: 'AXDPR2606K', desc: 'PAN to GST Search' },
-    pincode: { param: 'pin', category: '📍 Location', example: '110001', desc: 'Pincode Details' },
-    ip: { param: 'ip', category: '📍 Location', example: '8.8.8.8', desc: 'IP Lookup' },
-    vehicle: { param: 'vehicle', category: '🚗 Vehicle', example: 'MH02FZ0555', desc: 'Vehicle Registration' },
-    rc: { param: 'owner', category: '🚗 Vehicle', example: 'UP92P2111', desc: 'RC Owner Details' },
-    ff: { param: 'uid', category: '🎮 Gaming', example: '123456789', desc: 'Free Fire Info' },
-    bgmi: { param: 'uid', category: '🎮 Gaming', example: '5121439477', desc: 'BGMI Info' },
-    insta: { param: 'username', category: '🌐 Social', example: 'cristiano', desc: 'Instagram Profile' },
-    git: { param: 'username', category: '🌐 Social', example: 'ftgamer2', desc: 'GitHub Profile' },
-    tg: { param: 'info', category: '🌐 Social', example: 'JAUUOWNER', desc: 'Telegram Lookup' },
-    pk: { param: 'num', category: '🇵🇰 Pakistan', example: '03331234567', desc: 'Pakistan Number v1' },
-    pkv2: { param: 'num', category: '🇵🇰 Pakistan', example: '3359736848', desc: 'Pakistan Number v2' }
+    number: { param: 'num', category: 'ðŸ“± Phone Intelligence', example: '9876543210', desc: 'Indian Mobile Number Lookup' },
+    aadhar: { param: 'num', category: 'ðŸ“± Phone Intelligence', example: '393933081942', desc: 'Aadhaar Number Lookup' },
+    name: { param: 'name', category: 'ðŸ“± Phone Intelligence', example: 'abhiraaj', desc: 'Name to Records Search' },
+    numv2: { param: 'num', category: 'ðŸ“± Phone Intelligence', example: '6205949840', desc: 'Number Info v2' },
+    adv: { param: 'num', category: 'ðŸ“± Phone Intelligence', example: '9876543210', desc: 'Advanced Phone Lookup' },
+    upi: { param: 'upi', category: 'ðŸ’° Financial', example: 'example@ybl', desc: 'UPI ID Verification' },
+    ifsc: { param: 'ifsc', category: 'ðŸ’° Financial', example: 'SBIN0001234', desc: 'IFSC Code Details' },
+    pan: { param: 'pan', category: 'ðŸ’° Financial', example: 'AXDPR2606K', desc: 'PAN to GST Search' },
+    pincode: { param: 'pin', category: 'ðŸ“ Location', example: '110001', desc: 'Pincode Details' },
+    ip: { param: 'ip', category: 'ðŸ“ Location', example: '8.8.8.8', desc: 'IP Lookup' },
+    vehicle: { param: 'vehicle', category: 'ðŸš— Vehicle', example: 'MH02FZ0555', desc: 'Vehicle Registration' },
+    rc: { param: 'owner', category: 'ðŸš— Vehicle', example: 'UP92P2111', desc: 'RC Owner Details' },
+    ff: { param: 'uid', category: 'ðŸŽ® Gaming', example: '123456789', desc: 'Free Fire Info' },
+    bgmi: { param: 'uid', category: 'ðŸŽ® Gaming', example: '5121439477', desc: 'BGMI Info' },
+    insta: { param: 'username', category: 'ðŸŒ Social', example: 'cristiano', desc: 'Instagram Profile' },
+    git: { param: 'username', category: 'ðŸŒ Social', example: 'ftgamer2', desc: 'GitHub Profile' },
+    tg: { param: 'info', category: 'ðŸŒ Social', example: 'JAUUOWNER', desc: 'Telegram Lookup' },
+    pk: { param: 'num', category: 'ðŸ‡µðŸ‡° Pakistan', example: '03331234567', desc: 'Pakistan Number v1' },
+    pkv2: { param: 'num', category: 'ðŸ‡µðŸ‡° Pakistan', example: '3359736848', desc: 'Pakistan Number v2' }
 };
 
 // ========== CLEAN RESPONSE ==========
@@ -380,13 +325,6 @@ const ADMIN_PASSWORD = 'bronx2026';
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ========== KEY STORAGE (Memory me store karo) ==========
-// Agar tumhare paas already keyStorage hai toh ye line hata do
-if (!global.keyStorage) {
-    global.keyStorage = {};
-}
-const keyStorage = global.keyStorage;
-
 // ========== ADMIN LOGIN PAGE ==========
 app.get('/admin', (req, res) => {
     const html = `<!DOCTYPE html>
@@ -394,7 +332,7 @@ app.get('/admin', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔐 BRONX ADMIN</title>
+    <title>ðŸ” BRONX ADMIN</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -412,6 +350,11 @@ app.get('/admin', (req, res) => {
             padding: 50px 40px;
             width: 400px;
             box-shadow: 0 0 80px #ff00ff66;
+            animation: glow 3s infinite;
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 30px #ff00ff66, 0 0 60px #00ff4133; }
+            50% { box-shadow: 0 0 50px #00ff4166, 0 0 80px #ff00ff33; }
         }
         h1 { color: #00ff41; text-align: center; font-size: 36px; margin-bottom: 10px; text-shadow: 0 0 30px #00ff41; }
         .subtitle { color: #ff00ff; text-align: center; margin-bottom: 30px; font-size: 14px; }
@@ -428,18 +371,20 @@ app.get('/admin', (req, res) => {
         }
         .btn:hover { transform: scale(1.05); box-shadow: 0 0 40px #00ff41; }
         .error { color: #ff0000; text-align: center; margin-top: 15px; }
+        .hint { color: #ffff00; text-align: center; margin-top: 20px; font-size: 12px; opacity: 0.7; }
     </style>
 </head>
 <body>
     <div class="login-box">
-        <h1>⚡ BRONX</h1>
+        <h1>âš¡ BRONX</h1>
         <div class="subtitle">ADMIN PANEL</div>
         <div class="input-group">
-            <label>🔑 ADMIN PASSWORD</label>
+            <label>ðŸ”‘ ADMIN PASSWORD</label>
             <input type="password" id="password" placeholder="Enter password" autofocus>
         </div>
-        <button class="btn" onclick="login()">🚀 LOGIN</button>
+        <button class="btn" onclick="login()">ðŸš€ LOGIN</button>
         <div id="error" class="error"></div>
+        <div class="hint">Default: bronx2026</div>
     </div>
     <script>
         const ADMIN_PASS = '${ADMIN_PASSWORD}';
@@ -450,7 +395,7 @@ app.get('/admin', (req, res) => {
                 localStorage.setItem('bronx_admin_auth', 'true');
                 window.location.href = '/admin/dashboard';
             } else {
-                document.getElementById('error').textContent = '❌ Invalid password!';
+                document.getElementById('error').textContent = 'âŒ Invalid password!';
             }
         }
         
@@ -474,7 +419,7 @@ app.get('/admin/dashboard', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔐 BRONX ADMIN | DASHBOARD</title>
+    <title>ðŸ” BRONX ADMIN | DASHBOARD</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -482,7 +427,6 @@ app.get('/admin/dashboard', (req, res) => {
             background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 50%, #0a0a0a 100%);
             min-height: 100vh;
             padding: 20px;
-            color: #fff;
         }
         .container { max-width: 1400px; margin: 0 auto; }
         .header {
@@ -494,23 +438,22 @@ app.get('/admin/dashboard', (req, res) => {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
+            box-shadow: 0 0 50px #ff00ff33;
         }
         .header h1 { color: #00ff41; font-size: 32px; text-shadow: 0 0 30px #00ff41; }
         .btn {
             padding: 12px 25px; border-radius: 12px; font-weight: bold; cursor: pointer;
             transition: all 0.3s; font-family: 'Courier New', monospace; border: none;
-            font-size: 14px;
         }
         .btn-danger { background: #ff000033; border: 2px solid #ff0000; color: #ff6b6b; }
         .btn-primary { background: linear-gradient(45deg, #ff00ff, #00ff41); color: #000; }
         .btn-success { background: #00ff4120; border: 2px solid #00ff41; color: #00ff41; }
+        .btn-warning { background: #ffff0020; border: 2px solid #ffff00; color: #ffff00; }
         .btn:hover { transform: scale(1.05); }
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(5, 1fr);
             gap: 20px;
             margin-bottom: 25px;
         }
@@ -555,7 +498,6 @@ app.get('/admin/dashboard', (req, res) => {
         .scope-item {
             padding: 8px 15px; background: #1a0033; border: 1px solid #00ff41;
             border-radius: 20px; color: #00ff41; cursor: pointer; font-size: 12px;
-            transition: all 0.2s;
         }
         .scope-item.selected { background: #00ff41; color: #000; border-color: #00ff41; }
         
@@ -577,12 +519,13 @@ app.get('/admin/dashboard', (req, res) => {
         .status-exhausted { background: #ffff0020; color: #ffff00; border: 1px solid #ffff00; }
         
         .action-btn {
-            padding: 6px 12px; margin: 0 3px; border-radius: 8px; font-size: 12px;
-            cursor: pointer; background: transparent; border: 1px solid; font-weight: bold;
+            padding: 5px 12px; margin: 0 3px; border-radius: 8px; font-size: 11px;
+            cursor: pointer; background: transparent; border: 1px solid;
         }
-        .action-btn.copy { border-color: #ff00ff; color: #ff00ff; }
+        .action-btn.edit { border-color: #00ff41; color: #00ff41; }
         .action-btn.reset { border-color: #ffff00; color: #ffff00; }
         .action-btn.delete { border-color: #ff0000; color: #ff6b6b; }
+        .action-btn.copy { border-color: #ff00ff; color: #ff00ff; }
         
         .toast {
             position: fixed; bottom: 30px; right: 30px; background: #1a0033;
@@ -609,10 +552,10 @@ app.get('/admin/dashboard', (req, res) => {
 <body>
     <div class="container">
         <div class="header">
-            <h1>⚡ BRONX ADMIN PANEL</h1>
-            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                <button class="btn btn-success" onclick="refreshData()">🔄 REFRESH</button>
-                <button class="btn btn-danger" onclick="logout()">🚪 LOGOUT</button>
+            <h1>âš¡ BRONX ADMIN PANEL</h1>
+            <div style="display: flex; gap: 15px;">
+                <button class="btn btn-success" onclick="refreshData()">ðŸ”„ REFRESH</button>
+                <button class="btn btn-danger" onclick="logout()">ðŸšª LOGOUT</button>
             </div>
         </div>
         
@@ -641,48 +584,48 @@ app.get('/admin/dashboard', (req, res) => {
         
         <!-- Key Generator Panel -->
         <div class="panel">
-            <div class="panel-title">🔑 KEY GENERATOR</div>
+            <div class="panel-title">ðŸ”‘ KEY GENERATOR</div>
             <div class="form-grid">
                 <div class="form-group">
-                    <label>🔐 API KEY (blank = auto)</label>
+                    <label>ðŸ” API KEY (blank = auto)</label>
                     <input type="text" id="newKey" placeholder="Auto-generated">
                 </div>
                 <div class="form-group">
-                    <label>👤 OWNER NAME</label>
+                    <label>ðŸ‘¤ OWNER NAME</label>
                     <input type="text" id="newName" value="Premium User">
                 </div>
                 <div class="form-group">
-                    <label>📊 REQUEST LIMIT</label>
+                    <label>ðŸ“Š REQUEST LIMIT</label>
                     <input type="number" id="newLimit" value="100">
                 </div>
                 <div class="form-group">
-                    <label>⏰ EXPIRY (DD-MM-YYYY)</label>
+                    <label>â° EXPIRY (DD-MM-YYYY)</label>
                     <input type="text" id="newExpiry" value="31-12-2026">
                 </div>
             </div>
             
             <div class="preset-buttons">
-                <span class="preset-btn" onclick="selectAllScopes()">✅ All</span>
-                <span class="preset-btn" onclick="clearAllScopes()">❌ Clear</span>
-                <span class="preset-btn" onclick="selectPhone()">📱 Phone</span>
-                <span class="preset-btn" onclick="selectFinance()">💰 Finance</span>
-                <span class="preset-btn" onclick="selectVehicle()">🚗 Vehicle</span>
-                <span class="preset-btn" onclick="selectSocial()">🌐 Social</span>
+                <span class="preset-btn" onclick="selectAllScopes()">âœ… All</span>
+                <span class="preset-btn" onclick="clearAllScopes()">âŒ Clear</span>
+                <span class="preset-btn" onclick="selectPhone()">ðŸ“± Phone</span>
+                <span class="preset-btn" onclick="selectFinance()">ðŸ’° Finance</span>
+                <span class="preset-btn" onclick="selectVehicle()">ðŸš— Vehicle</span>
+                <span class="preset-btn" onclick="selectSocial()">ðŸŒ Social</span>
             </div>
             
-            <label style="color: #00ff41; margin: 10px 0; display: block;">📌 SELECT SCOPES:</label>
+            <label style="color: #00ff41; margin: 10px 0; display: block;">ðŸ“Œ SELECT SCOPES:</label>
             <div class="scope-selector" id="scopeSelector"></div>
             
             <div class="form-grid">
                 <div class="form-group">
-                    <label>✨ UNLIMITED</label>
+                    <label>âœ¨ UNLIMITED</label>
                     <select id="newUnlimited">
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
+                        <option value="false">No (Use limit)</option>
+                        <option value="true">Yes (Unlimited)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>👁️ VISIBILITY</label>
+                    <label>ðŸ‘ï¸ VISIBILITY</label>
                     <select id="newHidden">
                         <option value="false">Visible</option>
                         <option value="true">Hidden</option>
@@ -690,19 +633,18 @@ app.get('/admin/dashboard', (req, res) => {
                 </div>
             </div>
             
-            <button class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 18px;" onclick="generateKey()">🚀 GENERATE KEY</button>
+            <button class="btn btn-primary" style="width: 100%; padding: 15px;" onclick="generateKey()">ðŸš€ GENERATE KEY</button>
         </div>
         
         <!-- Keys Table -->
         <div class="panel">
-            <div class="panel-title">📋 ALL KEYS MANAGEMENT</div>
+            <div class="panel-title">ðŸ“‹ ALL KEYS MANAGEMENT</div>
             <div class="table-container">
                 <table class="key-table">
                     <thead>
                         <tr>
                             <th>KEY</th>
                             <th>OWNER</th>
-                            <th>SCOPES</th>
                             <th>LIMIT</th>
                             <th>USED</th>
                             <th>REMAINING</th>
@@ -726,7 +668,6 @@ app.get('/admin/dashboard', (req, res) => {
         
         const SCOPES = ['number', 'numv2', 'adv', 'name', 'aadhar', 'upi', 'ifsc', 'pan', 'pincode', 'ip', 'vehicle', 'rc', 'ff', 'bgmi', 'insta', 'git', 'tg', 'pk', 'pkv2'];
         
-        // Populate scopes
         const scopeDiv = document.getElementById('scopeSelector');
         SCOPES.forEach(scope => {
             const span = document.createElement('span');
@@ -756,27 +697,32 @@ app.get('/admin/dashboard', (req, res) => {
         function selectAllScopes() {
             document.querySelectorAll('#scopeSelector .scope-item').forEach(el => el.classList.add('selected'));
         }
+        
         function clearAllScopes() {
             document.querySelectorAll('#scopeSelector .scope-item').forEach(el => el.classList.remove('selected'));
         }
+        
         function selectPhone() {
             clearAllScopes();
             ['number', 'numv2', 'adv', 'name', 'aadhar'].forEach(s => {
                 Array.from(document.querySelectorAll('#scopeSelector .scope-item')).find(el => el.textContent === s)?.classList.add('selected');
             });
         }
+        
         function selectFinance() {
             clearAllScopes();
             ['upi', 'ifsc', 'pan'].forEach(s => {
                 Array.from(document.querySelectorAll('#scopeSelector .scope-item')).find(el => el.textContent === s)?.classList.add('selected');
             });
         }
+        
         function selectVehicle() {
             clearAllScopes();
             ['vehicle', 'rc'].forEach(s => {
                 Array.from(document.querySelectorAll('#scopeSelector .scope-item')).find(el => el.textContent === s)?.classList.add('selected');
             });
         }
+        
         function selectSocial() {
             clearAllScopes();
             ['insta', 'git', 'tg'].forEach(s => {
@@ -785,32 +731,23 @@ app.get('/admin/dashboard', (req, res) => {
         }
         
         async function generateKey() {
-            let key = document.getElementById('newKey').value.trim();
+            let key = document.getElementById('newKey').value;
             if (!key) key = generateRandomKey();
             
-            const name = document.getElementById('newName').value.trim() || 'Premium User';
+            const name = document.getElementById('newName').value || 'Premium User';
             const limit = parseInt(document.getElementById('newLimit').value) || 100;
-            const expiry = document.getElementById('newExpiry').value.trim() || '31-12-2026';
+            const expiry = document.getElementById('newExpiry').value || '31-12-2026';
             const unlimited = document.getElementById('newUnlimited').value === 'true';
             const hidden = document.getElementById('newHidden').value === 'true';
             const scopes = getSelectedScopes();
             
             if (scopes.length === 0) {
-                showToast('❌ Select at least one scope!', true);
+                showToast('âŒ Select at least one scope!', true);
                 return;
             }
             
-            const payload = { 
-                key: key, 
-                name: name, 
-                scopes: scopes, 
-                limit: limit, 
-                expiry: expiry, 
-                unlimited: unlimited, 
-                hidden: hidden 
-            };
-            
-            console.log('Sending payload:', JSON.stringify(payload));
+            const payload = { key, name, scopes, limit, expiry, unlimited, hidden };
+            console.log('Sending:', payload);
             
             try {
                 const res = await fetch('/admin/generate-key', {
@@ -819,129 +756,100 @@ app.get('/admin/dashboard', (req, res) => {
                     body: JSON.stringify(payload)
                 });
                 
-                const text = await res.text();
-                console.log('Raw response:', text);
-                
-                let data;
-                try {
-                    data = JSON.parse(text);
-                } catch(e) {
-                    showToast('❌ Invalid response from server', true);
-                    return;
-                }
+                const data = await res.json();
                 
                 if (data.success) {
-                    showToast('✅ Key generated: ' + key);
+                    showToast('âœ… Key generated: ' + key);
                     document.getElementById('newKey').value = '';
-                    await refreshData();
+                    refreshData();
                 } else {
-                    showToast('❌ ' + (data.error || 'Failed'), true);
+                    showToast(data.error || 'Failed', true);
                 }
             } catch (err) {
-                showToast('❌ Error: ' + err.message, true);
-                console.error(err);
+                showToast('âŒ Error: ' + err.message, true);
             }
         }
         
         async function refreshData() {
             try {
                 const res = await fetch('/admin/keys');
-                const text = await res.text();
-                let data;
-                try {
-                    data = JSON.parse(text);
-                } catch(e) {
-                    console.error('Invalid JSON from /admin/keys');
-                    return;
-                }
+                const data = await res.json();
                 
                 if (data.success) {
                     const keys = data.keys;
                     const keysArray = Object.entries(keys);
                     
                     document.getElementById('totalKeys').textContent = keysArray.length;
-                    document.getElementById('customApisCount').textContent = keysArray.length;
                     
                     let active = 0, totalReqs = 0;
                     keysArray.forEach(([_, k]) => {
-                        totalReqs += (k.used || 0);
+                        totalReqs += k.used || 0;
                         const notExpired = !k.expiry || k.expiry === 'Never' || new Date(k.expiry.split('-').reverse().join('-')) > new Date();
-                        const hasQuota = k.limit === 'Unlimited' || (k.used || 0) < k.limit;
+                        const hasQuota = k.limit === 'Unlimited' || k.used < k.limit;
                         if (notExpired && hasQuota) active++;
                     });
                     
                     document.getElementById('activeKeys').textContent = active;
                     document.getElementById('totalRequests').textContent = totalReqs;
+                    document.getElementById('customApisCount').textContent = '6';
                     
                     const tbody = document.getElementById('keysTableBody');
                     tbody.innerHTML = keysArray.map(([keyName, k]) => {
                         const isExpired = k.expiry && k.expiry !== 'Never' && new Date(k.expiry.split('-').reverse().join('-')) < new Date();
-                        const isExhausted = k.limit !== 'Unlimited' && (k.used || 0) >= k.limit;
-                        let status = '✅ Active', statusClass = 'status-active';
-                        if (isExpired) { status = '⏰ Expired'; statusClass = 'status-expired'; }
-                        else if (isExhausted) { status = '🛑 Exhausted'; statusClass = 'status-exhausted'; }
+                        const isExhausted = k.limit !== 'Unlimited' && k.used >= k.limit;
+                        let status = 'âœ… Active', statusClass = 'status-active';
+                        if (isExpired) { status = 'â° Expired'; statusClass = 'status-expired'; }
+                        else if (isExhausted) { status = 'ðŸ›‘ Exhausted'; statusClass = 'status-exhausted'; }
                         
-                        const displayKey = keyName.length > 20 ? keyName.substring(0, 18) + '..' : keyName;
-                        const remaining = k.limit === 'Unlimited' ? '∞' : Math.max(0, k.limit - (k.used || 0));
+                        const displayKey = keyName.length > 18 ? keyName.substring(0, 15) + '...' : keyName;
+                        const remaining = k.limit === 'Unlimited' ? 'âˆž' : Math.max(0, k.limit - k.used);
                         
                         return \`<tr>
-                            <td><code style="color: #ff00ff;">\${displayKey}</code>\${k.hidden ? ' 🔒' : ''}</td>
+                            <td><code style="color: #ff00ff;">\${displayKey}</code>\${k.hidden ? ' ðŸ”’' : ''}</td>
                             <td>\${k.owner || '-'}</td>
-                            <td>\${(k.scopes || []).join(', ')}</td>
-                            <td>\${k.limit === 'Unlimited' ? '∞' : k.limit}</td>
+                            <td>\${k.limit === 'Unlimited' ? 'âˆž' : k.limit}</td>
                             <td>\${k.used || 0}</td>
-                            <td style="color: \${(k.used || 0) >= k.limit ? '#ff6b6b' : '#00ff41'};">\${remaining}</td>
+                            <td style="color: \${remaining === 0 ? '#ff6b6b' : '#00ff41'};">\${remaining}</td>
                             <td>\${k.expiry || 'Never'}</td>
                             <td><span class="status-badge \${statusClass}">\${status}</span></td>
                             <td>
-                                <button class="action-btn copy" onclick="copyKey('\${keyName.replace(/'/g, "\\'")}')">📋</button>
-                                <button class="action-btn reset" onclick="resetKey('\${keyName.replace(/'/g, "\\'")}')">🔄</button>
-                                <button class="action-btn delete" onclick="deleteKey('\${keyName.replace(/'/g, "\\'")}')">🗑️</button>
+                                <button class="action-btn copy" onclick="copyKey('\${keyName}')">ðŸ“‹</button>
+                                <button class="action-btn reset" onclick="resetKey('\${keyName}')">ðŸ”„</button>
+                                <button class="action-btn delete" onclick="deleteKey('\${keyName}')">ðŸ—‘ï¸</button>
                             </td>
                         </tr>\`;
                     }).join('');
                 }
             } catch (err) {
-                console.error('Refresh error:', err);
+                console.error(err);
             }
         }
         
         function copyKey(key) {
-            navigator.clipboard.writeText(key).then(() => {
-                showToast('📋 Key copied!');
-            }).catch(() => {
-                showToast('❌ Copy failed', true);
-            });
+            navigator.clipboard.writeText(key);
+            showToast('ðŸ“‹ Copied!');
         }
         
         async function resetKey(key) {
-            if (!confirm('Reset usage for this key?')) return;
-            try {
-                await fetch('/admin/reset-usage', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ key: key })
-                });
-                showToast('✅ Usage reset!');
-                await refreshData();
-            } catch(e) {
-                showToast('❌ Error', true);
-            }
+            if (!confirm('Reset usage?')) return;
+            await fetch('/admin/reset-usage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key })
+            });
+            showToast('âœ… Reset!');
+            refreshData();
         }
         
         async function deleteKey(key) {
-            if (!confirm('PERMANENTLY DELETE this key?')) return;
-            try {
-                await fetch('/admin/delete-key', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ key: key })
-                });
-                showToast('✅ Key deleted!');
-                await refreshData();
-            } catch(e) {
-                showToast('❌ Error', true);
-            }
+            if (!confirm('DELETE this key?')) return;
+            await fetch('/admin/delete-key', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key })
+            });
+            showToast('âœ… Deleted!');
+            refreshData();
         }
         
         function logout() {
@@ -949,7 +857,6 @@ app.get('/admin/dashboard', (req, res) => {
             window.location.href = '/admin';
         }
         
-        // Initial load
         refreshData();
     </script>
 </body>
@@ -959,15 +866,14 @@ app.get('/admin/dashboard', (req, res) => {
 
 // ========== ADMIN API ENDPOINTS ==========
 
-// GET all keys
 app.get('/admin/keys', (req, res) => {
     const allKeys = {};
     Object.entries(keyStorage).forEach(([key, data]) => {
         allKeys[key] = {
-            owner: data.name || 'Unknown',
-            scopes: data.scopes || [],
-            limit: data.unlimited ? 'Unlimited' : (data.limit || 100),
-            used: data.used || 0,
+            owner: data.name,
+            scopes: data.scopes,
+            limit: data.unlimited ? 'Unlimited' : data.limit,
+            used: data.used,
             expiry: data.expiryStr || 'Never',
             hidden: data.hidden || false
         };
@@ -975,37 +881,34 @@ app.get('/admin/keys', (req, res) => {
     res.json({ success: true, keys: allKeys });
 });
 
-// FIXED: Generate key
+// FIXED: Generate key with proper body parsing
 app.post('/admin/generate-key', (req, res) => {
-    console.log('=== GENERATE KEY REQUEST ===');
-    console.log('Headers:', req.headers['content-type']);
-    console.log('Raw Body:', req.body);
+    console.log('Body received:', req.body); // Debug
     
-    const { key, name, scopes, limit, expiry, unlimited, hidden } = req.body;
+    // Manual extraction for safety
+    const key = req.body.key;
+    const name = req.body.name;
+    const scopes = req.body.scopes;
+    const limit = req.body.limit;
+    const expiry = req.body.expiry;
+    const unlimited = req.body.unlimited;
+    const hidden = req.body.hidden;
     
     if (!key) {
-        console.log('❌ No key provided');
-        return res.json({ success: false, error: 'Key is required' });
+        return res.json({ success: false, error: 'Key required' });
     }
     
     if (keyStorage[key]) {
-        console.log('❌ Key already exists:', key);
-        return res.json({ success: false, error: 'Key already exists!' });
+        return res.json({ success: false, error: 'Key already exists' });
     }
-    
-    console.log('✅ Creating new key:', key);
-    console.log('Name:', name);
-    console.log('Scopes:', scopes);
-    console.log('Limit:', limit);
-    console.log('Expiry:', expiry);
     
     let expiryDate = null;
     let expiryStr = null;
     
-    if (expiry && expiry.toLowerCase() !== 'never') {
+    if (expiry && expiry !== 'never') {
         const parts = expiry.split('-');
         if (parts.length === 3) {
-            expiryDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]), 23, 59, 59);
+            expiryDate = new Date(parts[2], parts[1] - 1, parts[0], 23, 59, 59);
             expiryStr = expiry;
         }
     }
@@ -1018,56 +921,36 @@ app.post('/admin/generate-key', (req, res) => {
         used: 0,
         expiry: expiryDate,
         expiryStr: expiryStr,
-        created: new Date().toISOString(),
+        created: getIndiaDateTime(),
+        resetType: 'never',
         unlimited: unlimited || false,
         hidden: hidden || false
     };
     
-    console.log('✅ Key stored successfully!');
-    console.log('Total keys:', Object.keys(keyStorage).length);
-    
-    res.json({ 
-        success: true, 
-        message: 'Key generated successfully!', 
-        key: key,
-        total_keys: Object.keys(keyStorage).length
-    });
+    res.json({ success: true, message: 'Key generated!', key });
 });
 
-// Reset usage
 app.post('/admin/reset-usage', (req, res) => {
-    const { key } = req.body;
-    console.log('Reset usage for:', key);
-    
+    const key = req.body.key;
     if (keyStorage[key]) {
         keyStorage[key].used = 0;
-        console.log('✅ Usage reset');
         res.json({ success: true });
     } else {
-        console.log('❌ Key not found');
         res.json({ success: false, error: 'Key not found' });
     }
 });
 
-// Delete key
 app.delete('/admin/delete-key', (req, res) => {
-    const { key } = req.body;
-    console.log('Delete key:', key);
-    
+    const key = req.body.key;
     if (keyStorage[key]) {
         delete keyStorage[key];
-        console.log('✅ Key deleted');
         res.json({ success: true });
     } else {
-        console.log('❌ Key not found');
         res.json({ success: false, error: 'Key not found' });
     }
 });
 
-console.log('✅ Admin Panel ready at /admin');
-console.log('📝 Password:', ADMIN_PASSWORD);
-    
-
+console.log('âœ… Admin Panel ready at /admin');
 
 // ========== SERVE ENHANCED HTML UI WITH DARK/LIGHT MODE ==========
 function serveHTML(res) {
@@ -1082,7 +965,7 @@ function serveHTML(res) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ BRONX OSINT | NEON API</title>
+    <title>âš¡ BRONX OSINT | NEON API</title>
     <style>
         /* ========== LIGHT MODE VARIABLES ========== */
         :root {
@@ -1414,14 +1297,14 @@ function serveHTML(res) {
         }
         .endpoint:hover::before { left: 100%; }
         .endpoint:hover { transform: translateY(-5px) scale(1.02); }
-        .endpoint[data-category="📱 Phone Intelligence"] { border-color: #ff00ff; }
-        .endpoint[data-category="💰 Financial"] { border-color: #00ff41; }
-        .endpoint[data-category="📍 Location"] { border-color: #ffff00; }
-        .endpoint[data-category="🚗 Vehicle"] { border-color: #ff0000; }
-        .endpoint[data-category="🎮 Gaming"] { border-color: #00ffff; }
-        .endpoint[data-category="🌐 Social"] { border-color: #ff8800; }
-        .endpoint[data-category="🇵🇰 Pakistan"] { border-color: #00ff88; }
-        .endpoint[data-category="🔧 Custom APIs"] { border-color: #ff00ff; background: linear-gradient(135deg, var(--bg-card), #ff00ff10); }
+        .endpoint[data-category="ðŸ“± Phone Intelligence"] { border-color: #ff00ff; }
+        .endpoint[data-category="ðŸ’° Financial"] { border-color: #00ff41; }
+        .endpoint[data-category="ðŸ“ Location"] { border-color: #ffff00; }
+        .endpoint[data-category="ðŸš— Vehicle"] { border-color: #ff0000; }
+        .endpoint[data-category="ðŸŽ® Gaming"] { border-color: #00ffff; }
+        .endpoint[data-category="ðŸŒ Social"] { border-color: #ff8800; }
+        .endpoint[data-category="ðŸ‡µðŸ‡° Pakistan"] { border-color: #00ff88; }
+        .endpoint[data-category="ðŸ”§ Custom APIs"] { border-color: #ff00ff; background: linear-gradient(135deg, var(--bg-card), #ff00ff10); }
         
         .method {
             padding: 4px 12px;
@@ -1741,20 +1624,20 @@ function serveHTML(res) {
 </head>
 <body>
     <div class="theme-toggle">
-        <button class="theme-btn dark" onclick="setTheme('dark')">🌙 DARK</button>
-        <button class="theme-btn light" onclick="setTheme('light')">☀️ LIGHT</button>
+        <button class="theme-btn dark" onclick="setTheme('dark')">ðŸŒ™ DARK</button>
+        <button class="theme-btn light" onclick="setTheme('light')">â˜€ï¸ LIGHT</button>
     </div>
 
     <div class="container">
         <div class="header">
             <h1>
-                <span>⚡</span> BRONX OSINT <span>⚡</span>
+                <span>âš¡</span> BRONX OSINT <span>âš¡</span>
             </h1>
             <div class="badge-container">
-                <span class="badge badge-1">🔐 NEON INTELLIGENCE</span>
-                <span class="badge badge-2">🌐 ${totalKeys}+ PREMIUM KEYS</span>
-                <span class="badge badge-3">🔧 CUSTOM APIs</span>
-                <span class="badge badge-4">⚡ REAL-TIME DATA</span>
+                <span class="badge badge-1">ðŸ” NEON INTELLIGENCE</span>
+                <span class="badge badge-2">ðŸŒ ${totalKeys}+ PREMIUM KEYS</span>
+                <span class="badge badge-3">ðŸ”§ CUSTOM APIs</span>
+                <span class="badge badge-4">âš¡ REAL-TIME DATA</span>
             </div>
         </div>
         
@@ -1778,61 +1661,103 @@ function serveHTML(res) {
         </div>
         
         <div class="limit-alert">
-            <div>⚡ KEY-BASED LIMIT SYSTEM</div>
-            <div style="margin-top: 10px;">🔑 Premium Keys: Fixed Lifetime Limits | Custom APIs Available</div>
-            <div style="margin-top: 10px;">⏰ Key Expiry: Auto-checked | 🇮🇳 India Time Zone</div>
+            <div>âš¡ KEY-BASED LIMIT SYSTEM</div>
+            <div style="margin-top: 10px;">ðŸ”‘ Premium Keys: Fixed Lifetime Limits | Custom APIs Available</div>
+            <div style="margin-top: 10px;">â° Key Expiry: Auto-checked | ðŸ‡®ðŸ‡³ India Time Zone</div>
         </div>
         
         <div class="auth-grid">
             <div class="auth-card">
-                <h3>🔐 AUTHENTICATION</h3>
+                <h3>ðŸ” AUTHENTICATION</h3>
                 <div class="code">GET /api/key-bronx/number?key=YOUR_KEY&num=9876543210</div>
                 <div style="margin-top: 15px; color: #ffff00; font-size: 12px;">Header: x-api-key also supported</div>
             </div>
             <div class="auth-card">
-                <h3>📊 CHECK QUOTA</h3>
+                <h3>ðŸ“Š CHECK QUOTA</h3>
                 <div class="code">GET /quota?key=YOUR_KEY</div>
                 <div style="margin-top: 15px; color: #00ff41; font-size: 12px;">Returns remaining requests</div>
             </div>
             <div class="auth-card">
-                <h3>🔑 KEY INFO</h3>
+                <h3>ðŸ”‘ KEY INFO</h3>
                 <div class="code">GET /key-info?key=YOUR_KEY</div>
                 <div style="margin-top: 15px; color: #ff00ff; font-size: 12px;">Check expiry & limits</div>
             </div>
         </div>
         
-        
-    
+        <!-- Custom API Admin Panel -->
+        <div class="admin-panel">
+            <h2>
+                ðŸ”§ CUSTOM API MANAGER 
+                <small>(10 Slots - Toggle Visibility)</small>
+            </h2>
+            <div class="custom-api-form">
+                <select id="apiSlotSelect">
+                    <option value="0">Select Slot (1-10)</option>
+                    ${customAPIs.map((api, i) => `<option value="${i}">Slot ${api.id} - ${api.name}</option>`).join('')}
+                </select>
+                <input type="text" id="apiNameInput" placeholder="API Display Name">
+                <input type="text" id="apiEndpointInput" placeholder="Endpoint (e.g., myapi)">
+                <input type="text" id="apiParamInput" placeholder="Parameter (e.g., query)">
+                <input type="text" id="apiExampleInput" placeholder="Example Value">
+                <input type="text" id="apiDescInput" placeholder="Description">
+                <input type="text" id="apiRealUrlInput" placeholder="Real API URL (use {param})">
+            </div>
+            <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
+                <button onclick="saveCustomAPI()">ðŸ’¾ Save API</button>
+                <button onclick="loadAPIToSlot()">ðŸ“‚ Load to Form</button>
+                <div class="toggle-visibility">
+                    <input type="checkbox" id="apiVisibleCheck"> 
+                    <label for="apiVisibleCheck">ðŸ‘ï¸ Visible to Public</label>
+                </div>
+                <button onclick="toggleAPIVisibility()">ðŸ”„ Toggle Visibility</button>
+            </div>
+            <div class="custom-apis-list" id="customApisList">
+                ${customAPIs.map((api, i) => `
+                    <div class="custom-api-item">
+                        <div class="api-info">
+                            <strong style="color: #ff00ff;">Slot ${api.id}</strong>
+                            <span style="color: var(--text-primary);">${api.name || '(Empty)'}</span>
+                            <code style="color: #00ff41;">/${api.endpoint || 'not-set'}</code>
+                            <span class="status ${api.visible ? 'visible' : 'hidden'}">${api.visible ? 'ðŸ‘ï¸ Visible' : 'ðŸ”’ Hidden'}</span>
+                        </div>
+                        <div>
+                            <button onclick="editAPI(${i})">âœï¸ Edit</button>
+                            <button onclick="deleteAPI(${i})">ðŸ—‘ï¸ Delete</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
         
         <!-- API Testing Panel -->
         <div class="api-panel">
-            <h2>🧪 API TESTING PANEL</h2>
+            <h2>ðŸ§ª API TESTING PANEL</h2>
             <div class="input-group">
                 <select id="endpointSelect">
-                    <optgroup label="📱 Built-in APIs">
+                    <optgroup label="ðŸ“± Built-in APIs">
                         ${Object.entries(endpoints).map(([name, ep]) => `<option value="${name}">${name.toUpperCase()} - ${ep.desc}</option>`).join('')}
                     </optgroup>
                     ${visibleCustomAPIs.length > 0 ? `
-                        <optgroup label="🔧 Custom APIs">
-                            ${visibleCustomAPIs.map(api => `<option value="custom_${api.id}" data-custom="true" data-endpoint="${api.endpoint}" data-param="${api.param}" data-real="${api.realAPI}">🔧 ${api.name} - ${api.desc}</option>`).join('')}
+                        <optgroup label="ðŸ”§ Custom APIs">
+                            ${visibleCustomAPIs.map(api => `<option value="custom_${api.id}" data-custom="true" data-endpoint="${api.endpoint}" data-param="${api.param}" data-real="${api.realAPI}">ðŸ”§ ${api.name} - ${api.desc}</option>`).join('')}
                         </optgroup>
                     ` : ''}
                 </select>
                 <input type="text" id="apiKeyInput" placeholder="Enter API Key">
                 <input type="text" id="paramInput" placeholder="Parameter Value">
-                <button onclick="testAPI()">🚀 TEST API</button>
+                <button onclick="testAPI()">ðŸš€ TEST API</button>
             </div>
             <div id="apiResult" class="api-result" style="display:none;"></div>
         </div>
         
         ${Object.entries({
-            '📱 Phone Intelligence': '📱 Phone Intelligence',
-            '💰 Financial': '💰 Financial',
-            '📍 Location': '📍 Location',
-            '🚗 Vehicle': '🚗 Vehicle',
-            '🎮 Gaming': '🎮 Gaming',
-            '🌐 Social': '🌐 Social',
-            '🇵🇰 Pakistan': '🇵🇰 Pakistan'
+            'ðŸ“± Phone Intelligence': 'ðŸ“± Phone Intelligence',
+            'ðŸ’° Financial': 'ðŸ’° Financial',
+            'ðŸ“ Location': 'ðŸ“ Location',
+            'ðŸš— Vehicle': 'ðŸš— Vehicle',
+            'ðŸŽ® Gaming': 'ðŸŽ® Gaming',
+            'ðŸŒ Social': 'ðŸŒ Social',
+            'ðŸ‡µðŸ‡° Pakistan': 'ðŸ‡µðŸ‡° Pakistan'
         }).filter(([_, cat]) => Object.values(endpoints).some(e => e.category === cat)).map(([display, cat]) => `
             <div class="category">${display}</div>
             <div class="endpoint-grid">
@@ -1841,344 +1766,55 @@ function serveHTML(res) {
                         <span class="method get">GET</span>
                         <div class="endpoint-name">/${name}</div>
                         <div class="endpoint-url">/api/key-bronx/${name}</div>
-                        <div class="param">📝 ${ep.desc}</div>
-                        <div class="param">🔑 ${ep.param}=${ep.example}</div>
+                        <div class="param">ðŸ“ ${ep.desc}</div>
+                        <div class="param">ðŸ”‘ ${ep.param}=${ep.example}</div>
                     </div>
                 `).join('')}
             </div>
         `).join('')}
         
         ${visibleCustomAPIs.length > 0 ? `
-            <div class="category">🔧 Custom APIs</div>
+            <div class="category">ðŸ”§ Custom APIs</div>
             <div class="endpoint-grid">
                 ${visibleCustomAPIs.map(api => `
-                    <div class="endpoint" data-category="🔧 Custom APIs" onclick="copyCustomUrl('${api.endpoint}', '${api.param}', '${api.example}')">
+                    <div class="endpoint" data-category="ðŸ”§ Custom APIs" onclick="copyCustomUrl('${api.endpoint}', '${api.param}', '${api.example}')">
                         <span class="method custom">CUSTOM</span>
                         <div class="endpoint-name">/${api.endpoint}</div>
                         <div class="endpoint-url">/api/custom/${api.endpoint}</div>
-                        <div class="param">📝 ${api.desc}</div>
-                        <div class="param">🔑 ${api.param}=${api.example}</div>
+                        <div class="param">ðŸ“ ${api.desc}</div>
+                        <div class="param">ðŸ”‘ ${api.param}=${api.example}</div>
                     </div>
                 `).join('')}
             </div>
         ` : ''}
         
-        
+        <div class="key-info-section">
+            <div class="key-info-title">ðŸ”‘ PREMIUM KEYS LIST</div>
+            <div class="key-table-container">
+                <table class="key-table">
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Owner</th>
+                            <th>Scopes</th>
+                            <th>Limit</th>
+                            <th>Used</th>
+                            <th>Expiry</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="keyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
         
         <div class="footer">
-            <p class="glow-text">✨ BRONX OSINT API - NEON EDITION ✨</p>
+            <p class="glow-text">âœ¨ BRONX OSINT API - NEON EDITION âœ¨</p>
             <p style="color: #ff00ff;">Powered by @BRONX_ULTRA</p>
-            <p style="color: #00ff41;">🇮🇳 India Time Zone | Premium Keys | Custom API Support</p>
-            <p style="color: #ffff00; margin-top: 15px;">⚠️ Keys are lifetime limited - No reset! Contact @BRONX_ULTRA for new keys.</p>
+            <p style="color: #00ff41;">ðŸ‡®ðŸ‡³ India Time Zone | Premium Keys | Custom API Support</p>
+            <p style="color: #ffff00; margin-top: 15px;">âš ï¸ Keys are lifetime limited - No reset! Contact @BRONX_ULTRA for new keys.</p>
         </div>
     </div>
-
-  <!-- ========== TELEGRAM POPUP ========== -->
-<style>
-    /* Popup Overlay */
-    .telegram-popup-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(8px);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 99999;
-        animation: fadeIn 0.3s ease;
-    }
-    
-    /* Popup Box */
-    .telegram-popup {
-        background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 100%);
-        border: 3px solid;
-        border-image: linear-gradient(45deg, #ff00ff, #00ff41, #ffff00) 1;
-        border-radius: 30px;
-        padding: 35px 30px;
-        max-width: 420px;
-        width: 90%;
-        text-align: center;
-        box-shadow: 0 0 80px #ff00ff66, 0 0 150px #00ff4133;
-        animation: slideUp 0.4s ease, glowPulse 3s infinite;
-        position: relative;
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    
-    @keyframes slideUp {
-        from { transform: translateY(50px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    
-    @keyframes glowPulse {
-        0%, 100% { box-shadow: 0 0 50px #ff00ff66, 0 0 100px #00ff4133; }
-        50% { box-shadow: 0 0 70px #00ff4166, 0 0 120px #ff00ff33; }
-    }
-    
-    /* Close Button */
-    .popup-close {
-        position: absolute;
-        top: 15px;
-        right: 20px;
-        background: none;
-        border: none;
-        color: #ff00ff;
-        font-size: 28px;
-        cursor: pointer;
-        transition: all 0.3s;
-        font-weight: bold;
-    }
-    
-    .popup-close:hover {
-        color: #00ff41;
-        transform: scale(1.2);
-        text-shadow: 0 0 20px #00ff41;
-    }
-    
-    /* Title */
-    .popup-title {
-        font-size: 22px;
-        font-weight: bold;
-        margin-bottom: 20px;
-        background: linear-gradient(45deg, #ff00ff, #00ff41, #ffff00);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        text-shadow: 0 0 30px #ff00ff66;
-        letter-spacing: 2px;
-    }
-    
-    /* Telegram Icon */
-    .telegram-icon {
-        width: 70px;
-        height: 70px;
-        margin: 0 auto 20px;
-        background: linear-gradient(45deg, #0088cc, #00ff41);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 40px;
-        box-shadow: 0 0 40px #0088cc;
-        animation: iconPulse 2s infinite;
-    }
-    
-    @keyframes iconPulse {
-        0%, 100% { transform: scale(1); box-shadow: 0 0 30px #0088cc; }
-        50% { transform: scale(1.05); box-shadow: 0 0 50px #00ff41; }
-    }
-    
-    /* Buttons Container */
-    .popup-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-        margin: 25px 0 15px;
-    }
-    
-    /* Telegram Button */
-    .telegram-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        padding: 16px 25px;
-        border-radius: 50px;
-        font-weight: bold;
-        font-size: 16px;
-        text-decoration: none;
-        transition: all 0.3s;
-        border: 2px solid;
-        font-family: 'Courier New', monospace;
-    }
-    
-    .btn-channel {
-        background: linear-gradient(45deg, #0088cc20, #00ff4120);
-        border-color: #0088cc;
-        color: #00ff41;
-        box-shadow: 0 0 30px #0088cc33;
-    }
-    
-    .btn-channel:hover {
-        background: linear-gradient(45deg, #0088cc40, #00ff4140);
-        transform: scale(1.02);
-        box-shadow: 0 0 50px #0088cc;
-        border-color: #00ff41;
-    }
-    
-    .btn-group {
-        background: linear-gradient(45deg, #ff00ff20, #ffff0020);
-        border-color: #ff00ff;
-        color: #ffff00;
-        box-shadow: 0 0 30px #ff00ff33;
-    }
-    
-    .btn-group:hover {
-        background: linear-gradient(45deg, #ff00ff40, #ffff0040);
-        transform: scale(1.02);
-        box-shadow: 0 0 50px #ff00ff;
-        border-color: #ffff00;
-    }
-    
-    /* Owner Info */
-    .popup-owner {
-        margin-top: 20px;
-        padding-top: 20px;
-        border-top: 1px dashed #ffffff30;
-        color: #fff;
-        font-size: 14px;
-    }
-    
-    .owner-name {
-        color: #ff00ff;
-        font-weight: bold;
-        font-size: 18px;
-        text-shadow: 0 0 20px #ff00ff;
-    }
-    
-    .popup-footer {
-        margin-top: 15px;
-        color: #888;
-        font-size: 12px;
-    }
-    
-    /* Don't show again checkbox */
-    .dont-show-again {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        margin-top: 15px;
-        color: #888;
-        font-size: 13px;
-        cursor: pointer;
-    }
-    
-    .dont-show-again input {
-        width: 16px;
-        height: 16px;
-        accent-color: #ff00ff;
-        cursor: pointer;
-    }
-</style>
-
-<!-- Telegram Popup HTML -->
-<div id="telegramPopup" class="telegram-popup-overlay">
-    <div class="telegram-popup">
-        <button class="popup-close" onclick="closeTelegramPopup()">&times;</button>
-        
-        <div class="telegram-icon">
-            📱
-        </div>
-        
-        <div class="popup-title">
-            ⚡ BRONX OSINT ⚡
-        </div>
-        
-        <p style="color: #00ff41; margin-bottom: 10px; font-size: 14px;">
-            Join our Telegram channels for updates & support
-        </p>
-        
-        <div class="popup-buttons">
-            <a href="https://t.me/bronx_ultra_osint" target="_blank" class="telegram-btn btn-channel">
-                <span style="font-size: 24px;">📢</span>
-                API CHANNEL LINK
-                <span style="font-size: 20px;">→</span>
-            </a>
-            
-            <a href="https://t.me/+i6N0YDhlYKBiZWUy" target="_blank" class="telegram-btn btn-group">
-                <span style="font-size: 24px;">💬</span>
-                OSINT INFO GROUP
-                <span style="font-size: 20px;">→</span>
-            </a>
-        </div>
-        
-        <div class="popup-owner">
-            <span style="color: #fff;">OWNER: </span>
-            <span class="owner-name">@BRONX_ULTRA</span>
-        </div>
-        
-        <div class="dont-show-again" onclick="toggleDontShow()">
-            <input type="checkbox" id="dontShowCheck">
-            <label for="dontShowCheck" style="cursor: pointer;">Don't show this again</label>
-        </div>
-        
-        <div class="popup-footer">
-            ⏤͟͟͞͞🦋⃟≛⃝🇧≛⃝ 🇷𝐎𝐍𝐗 𝗢𝗦𝗜𝗡𝗧 ł₦₣Ø ≛⃝💞࿐
-        </div>
-    </div>
-</div>
-
-<script>
-    // ========== TELEGRAM POPUP SCRIPT ==========
-    
-    // Check if popup should be shown
-    function shouldShowPopup() {
-        const dontShow = localStorage.getItem('bronx_popup_dont_show');
-        if (dontShow === 'true') return false;
-        
-        // Check if shown in last 24 hours
-        const lastShown = localStorage.getItem('bronx_popup_last_shown');
-        if (lastShown) {
-            const hoursSince = (Date.now() - parseInt(lastShown)) / (1000 * 60 * 60);
-            if (hoursSince < 24) return false;
-        }
-        
-        return true;
-    }
-    
-    // Show popup
-    function showTelegramPopup() {
-        if (shouldShowPopup()) {
-            document.getElementById('telegramPopup').style.display = 'flex';
-            localStorage.setItem('bronx_popup_last_shown', Date.now());
-        }
-    }
-    
-    // Close popup
-    function closeTelegramPopup() {
-        document.getElementById('telegramPopup').style.display = 'none';
-        
-        // Save preference if checkbox checked
-        if (document.getElementById('dontShowCheck').checked) {
-            localStorage.setItem('bronx_popup_dont_show', 'true');
-        }
-    }
-    
-    // Toggle don't show
-    function toggleDontShow() {
-        const checkbox = document.getElementById('dontShowCheck');
-        checkbox.checked = !checkbox.checked;
-    }
-    
-    // Click outside to close
-    document.addEventListener('click', function(e) {
-        const popup = document.querySelector('.telegram-popup');
-        const overlay = document.getElementById('telegramPopup');
-        
-        if (e.target === overlay) {
-            closeTelegramPopup();
-        }
-    });
-    
-    // Escape key to close
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeTelegramPopup();
-        }
-    });
-    
-    // Show popup on page load (with slight delay)
-    window.addEventListener('load', function() {
-        setTimeout(showTelegramPopup, 1000);
-    });
-</script>
     
     <script>
         const endpoints = ${JSON.stringify(endpoints)};
@@ -2203,13 +1839,13 @@ function serveHTML(res) {
         function copyUrl(endpoint, param, example) {
             const url = window.location.origin + '/api/key-bronx/' + endpoint + '?key=YOUR_KEY&' + param + '=' + example;
             navigator.clipboard.writeText(url);
-            showToast('✅ URL Copied! ' + endpoint.toUpperCase());
+            showToast('âœ… URL Copied! ' + endpoint.toUpperCase());
         }
         
         function copyCustomUrl(endpoint, param, example) {
             const url = window.location.origin + '/api/custom/' + endpoint + '?key=YOUR_KEY&' + param + '=' + example;
             navigator.clipboard.writeText(url);
-            showToast('✅ Custom API URL Copied!');
+            showToast('âœ… Custom API URL Copied!');
         }
         
         function showToast(message) {
@@ -2229,12 +1865,12 @@ function serveHTML(res) {
             const resultDiv = document.getElementById('apiResult');
             
             if (!apiKey) {
-                showToast('❌ Please enter API Key');
+                showToast('âŒ Please enter API Key');
                 return;
             }
             
             if (!paramValue) {
-                showToast('❌ Please enter parameter value');
+                showToast('âŒ Please enter parameter value');
                 return;
             }
             
@@ -2250,7 +1886,7 @@ function serveHTML(res) {
             }
             
             resultDiv.style.display = 'block';
-            resultDiv.innerHTML = '⏳ Loading...';
+            resultDiv.innerHTML = 'â³ Loading...';
             
             try {
                 const response = await fetch(url);
@@ -2265,7 +1901,7 @@ function serveHTML(res) {
         function saveCustomAPI() {
             const slot = parseInt(document.getElementById('apiSlotSelect').value);
             if (isNaN(slot)) {
-                showToast('❌ Please select a slot');
+                showToast('âŒ Please select a slot');
                 return;
             }
             
@@ -2285,7 +1921,7 @@ function serveHTML(res) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ slot, api: customAPIs[slot] })
             }).then(() => {
-                showToast('✅ API Saved! Refresh to see changes.');
+                showToast('âœ… API Saved! Refresh to see changes.');
                 setTimeout(() => location.reload(), 1000);
             });
         }
@@ -2293,7 +1929,7 @@ function serveHTML(res) {
         function loadAPIToSlot() {
             const slot = parseInt(document.getElementById('apiSlotSelect').value);
             if (isNaN(slot)) {
-                showToast('❌ Please select a slot');
+                showToast('âŒ Please select a slot');
                 return;
             }
             
@@ -2310,7 +1946,7 @@ function serveHTML(res) {
         function toggleAPIVisibility() {
             const slot = parseInt(document.getElementById('apiSlotSelect').value);
             if (isNaN(slot)) {
-                showToast('❌ Please select a slot');
+                showToast('âŒ Please select a slot');
                 return;
             }
             
@@ -2321,7 +1957,7 @@ function serveHTML(res) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ slot, api: customAPIs[slot] })
             }).then(() => {
-                showToast('✅ Visibility toggled! Refreshing...');
+                showToast('âœ… Visibility toggled! Refreshing...');
                 setTimeout(() => location.reload(), 800);
             });
         }
@@ -2349,7 +1985,7 @@ function serveHTML(res) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ slot: index, api: customAPIs[index] })
             }).then(() => {
-                showToast('🗑️ API Deleted! Refreshing...');
+                showToast('ðŸ—‘ï¸ API Deleted! Refreshing...');
                 setTimeout(() => location.reload(), 800);
             });
         }
@@ -2363,18 +1999,18 @@ function serveHTML(res) {
                 const expiry = data.expiry ? new Date(data.expiry) : null;
                 const isExpired = expiry && now > expiry;
                 const isExhausted = !data.unlimited && data.used >= data.limit;
-                let status = '✅ Active';
+                let status = 'âœ… Active';
                 let statusClass = 'status-active';
                 
                 if (isExpired) {
-                    status = '⏰ Expired';
+                    status = 'â° Expired';
                     statusClass = 'status-expired';
                 } else if (isExhausted) {
-                    status = '🛑 Exhausted';
+                    status = 'ðŸ›‘ Exhausted';
                     statusClass = 'status-exhausted';
                 }
                 
-                const limitDisplay = data.unlimited ? '∞' : data.limit;
+                const limitDisplay = data.unlimited ? 'âˆž' : data.limit;
                 const displayKey = key.length > 20 ? key.substring(0, 17) + '...' : key;
                 
                 return '<tr>' +
@@ -2417,7 +2053,7 @@ app.get('/', (req, res) => serveHTML(res));
 
 app.get('/test', (req, res) => {
     res.json({ 
-        status: '✅ BRONX OSINT API Running', 
+        status: 'âœ… BRONX OSINT API Running', 
         credit: '@BRONX_ULTRA', 
         time: getIndiaDateTime(),
         timezone: 'Asia/Kolkata (IST)',
@@ -2506,8 +2142,8 @@ app.get('/api/custom/:endpoint', async (req, res) => {
     const { endpoint } = req.params;
     const apiKey = req.query.key || req.headers['x-api-key'];
     
-    console.log('📡 Custom API Request:', endpoint);
-    console.log('📡 Query Params:', req.query);
+    console.log('ðŸ“¡ Custom API Request:', endpoint);
+    console.log('ðŸ“¡ Query Params:', req.query);
     
     // Find custom API
     const customAPI = customAPIs.find(api => api.endpoint === endpoint && api.visible);
@@ -2516,7 +2152,7 @@ app.get('/api/custom/:endpoint', async (req, res) => {
     }
     
     if (!apiKey) {
-        return res.status(401).json({ success: false, error: "❌ API Key Required" });
+        return res.status(401).json({ success: false, error: "âŒ API Key Required" });
     }
     
     // Check key validity
@@ -2547,7 +2183,7 @@ app.get('/api/custom/:endpoint', async (req, res) => {
         realUrl = realUrl.replace('{param}', paramValue);
         realUrl = realUrl.replace('{parma}', paramValue); // Fix typo if any
         
-        console.log(`📡 Calling Real API: ${realUrl}`);
+        console.log(`ðŸ“¡ Calling Real API: ${realUrl}`);
         
         const response = await axios.get(realUrl, { 
             timeout: 30000,
@@ -2576,7 +2212,7 @@ app.get('/api/custom/:endpoint', async (req, res) => {
         res.json(cleanedData);
         
     } catch (error) {
-        console.error(`❌ Custom API Error [${endpoint}]:`, error.message);
+        console.error(`âŒ Custom API Error [${endpoint}]:`, error.message);
         console.error('Response status:', error.response?.status);
         console.error('Response data:', error.response?.data);
         
@@ -2626,7 +2262,7 @@ app.get('/api/key-bronx/:endpoint', async (req, res) => {
     }
     
     if (!apiKey) {
-        return res.status(401).json({ success: false, error: "❌ API Key Required. Use ?key=YOUR_KEY" });
+        return res.status(401).json({ success: false, error: "âŒ API Key Required. Use ?key=YOUR_KEY" });
     }
     
     const keyCheck = checkKeyValid(apiKey);
@@ -2659,7 +2295,7 @@ app.get('/api/key-bronx/:endpoint', async (req, res) => {
     
     try {
         const realUrl = `${REAL_API_BASE}/${endpoint}?key=${REAL_API_KEY}&${ep.param}=${encodeURIComponent(paramValue)}`;
-        console.log(`📡 [${getIndiaDateTime()}] ${endpoint} -> ${paramValue} | Key: ${apiKey.substring(0, 8)}...`);
+        console.log(`ðŸ“¡ [${getIndiaDateTime()}] ${endpoint} -> ${paramValue} | Key: ${apiKey.substring(0, 8)}...`);
         
         const response = await axios.get(realUrl, { timeout: 30000 });
         
@@ -2681,7 +2317,7 @@ app.get('/api/key-bronx/:endpoint', async (req, res) => {
         
         res.json(cleanedData);
     } catch (error) {
-        console.error(`❌ Error [${endpoint}]:`, error.message);
+        console.error(`âŒ Error [${endpoint}]:`, error.message);
         if (error.response) {
             return res.status(error.response.status).json(cleanResponse(error.response.data));
         }
