@@ -187,7 +187,7 @@ const premiumKeys = [
     { key: 'PREMIUM_COMBO_002', name: '🎯 Combo Pack 2', scopes: ['vehicle', 'rc', 'pincode'], limit: 90, expiry: '30-11-2026' },
     { key: 'PREMIUM_COMBO_003', name: '🎯 Combo Pack 3', scopes: ['insta', 'git', 'tg', 'ff'], limit: 180, expiry: '31-12-2026' },
     { key: 'PREMIUM_BASIC_001', name: '⭐ Basic User 1', scopes: ['number'], limit: 30, expiry: '31-07-2026' },
-    { key: 'paid11', name: '⭐ Basic User 2', scopes: ['number'], limit: 4000, expiry: '31-08-2028' },
+    { key: '000', name: '⭐ Basic User 2', scopes: ['number'], limit: 4000, expiry: '31-08-2028' },
     { key: 'PREMIUM_BASIC_003', name: '⭐ Basic User 3', scopes: ['number'], limit: 5000, expiry: '29-04-2026' },
     { key: 'PREMIUM_ADVANCED_001', name: '🌟 Advanced User 1', scopes: ['number', 'numv2', 'adv', 'name'], limit: 200, expiry: '31-12-2026' },
     { key: 'PREMIUM_ADVANCED_002', name: '🌟 Advanced User 2', scopes: ['aadhar', 'pan', 'upi'], limit: 100, expiry: '31-12-2026' },
