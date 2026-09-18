@@ -1,14 +1,10 @@
 {
   "name": "bronx-ultra-osint",
-  "version": "6.0.0",
-  "description": "BRONX ULTRA · Custom API + Export/Import",
+  "version": "7.0.0",
+  "description": "BRONX ULTRA · Full Featured OSINT Panel",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18.0.0" },
   "dependencies": {
     "express": "^4.19.2",
     "cookie-parser": "^1.4.6"
