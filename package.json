@@ -1,16 +1,16 @@
 {
-  "name": "bronx-api-osint",
-  "version": "1.0.0",
-  "description": "BRONX OSINT API - Premium OSINT Tools",
-  "main": "index.js",
+  "name": "bronx-ultra-osint",
+  "version": "6.0.0",
+  "description": "BRONX ULTRA · Custom API + Export/Import",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "axios": "^1.6.0"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cookie-parser": "^1.4.6"
   }
 }
