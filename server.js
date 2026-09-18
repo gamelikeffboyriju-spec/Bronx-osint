@@ -270,6 +270,26 @@ function sanitizeFeature(x, i) {
   x = x || {};
   let endpoint = String(x.endpoint || '/api/key-bronx/number').trim();
   if (endpoint.charAt(0) !== '/') endpoint = '/' + endpoint;
+
+  /* Auto-detect mode from fullUrl */
+  let mode = (x.mode === 'custom') ? 'custom' : 'bronx';
+  const fullUrl = String(x.fullUrl || '').trim();
+
+  /* If fullUrl contains bronx-papa or /api/key-bronx or /api/custom → auto-bronx mode with extracted endpoint */
+  let autoEndpoint = '';
+  let autoParam = 'num';
+  if (fullUrl && mode === 'custom') {
+    const m = fullUrl.match(/(\/api\/(?:key-bronx|custom)\/[a-zA-Z0-9_-]+)\?[^#]*?(?:num|q|query|vehicle|upi|ifsc|pin|ip|uid)=/);
+    if (m) {
+      autoEndpoint = m[1];
+      /* Extract param name */
+      const pm = fullUrl.match(/[?&](num|q|query|vehicle|upi|ifsc|pin|ip|uid|value|input)=/);
+      if (pm) autoParam = pm[1];
+      mode = 'bronx';
+      endpoint = autoEndpoint;
+    }
+  }
+
   return {
     id:          String(x.id || ('feat_' + Date.now() + '_' + i)).slice(0, 60),
     name:        String(x.name || ('Feature ' + (i + 1))).slice(0, 60),
@@ -277,10 +297,10 @@ function sanitizeFeature(x, i) {
     color:       String(x.color || '#22d3ee').slice(0, 20),
     hint:        String(x.hint || 'Enter value').slice(0, 80),
     placeholder: String(x.placeholder || 'value').slice(0, 80),
-    mode:        (x.mode === 'custom') ? 'custom' : 'bronx',
+    mode:        mode,
     endpoint:    endpoint.slice(0, 200),
-    param:       String(x.param || 'num').slice(0, 30),
-    fullUrl:     String(x.fullUrl || '').slice(0, 500),
+    param:       String(x.param || autoParam).slice(0, 30),
+    fullUrl:     fullUrl.slice(0, 500),
     method:      String(x.method || 'GET').toUpperCase() === 'POST' ? 'POST' : 'GET',
     headers:     String(x.headers || '').slice(0, 500),
     responseType:['json','text','xml','html'].indexOf(String(x.responseType||'json').toLowerCase()) >= 0
@@ -326,51 +346,50 @@ async function adminCreds() {
 }
 
 /* ============================================================
-   URL TEMPLATE BUILDER
-   Takes user query + feature config → returns final URL
+   URL TEMPLATE BUILDER — supports {q} {p} {num} {value} {query} %s
    ============================================================ */
 function buildCustomUrl(feat, q) {
   let url = String(feat.fullUrl || '').trim();
   if (!url) return null;
-  const enc = encodeURIComponent(q);
-  /* Replace {q} or {QUERY} with encoded query */
-  url = url.split('{q}').join(enc);
-  url = url.split('{QUERY}').join(enc);
-  url = url.split('{query}').join(enc);
-  /* Auto-append if no placeholder found */
-  if (url.indexOf(enc) === -1 && url.indexOf('=') === -1) {
-    url += (url.indexOf('?') === -1 ? '?' : '&') + 'q=' + enc;
-  } else if (url.indexOf(enc) === -1 && url.indexOf('{q}') === -1 && url.indexOf('{QUERY}') === -1){
-    /* if there's already an = but no placeholder, append */
-    if (url.indexOf('=') > -1 && url.indexOf('?') > -1){
-      url += '&q=' + enc;
+
+  const raw = String(q);
+  const enc = encodeURIComponent(raw);
+
+  /* ✅ All supported placeholders */
+  const placeholders = [
+    '{q}', '{p}', '{num}', '{value}', '{input}', '{query}',
+    '{Q}', '{P}', '{NUM}', '{VALUE}', '{QUERY}',
+    '{QUERY}', '%s'
+  ];
+
+  let replaced = false;
+  for (const ph of placeholders) {
+    if (url.indexOf(ph) !== -1) {
+      url = url.split(ph).join(enc);
+      replaced = true;
     }
   }
-  /* Add API key if BRONX_API_KEY configured and no key param present */
-  if (CFG.KEY && url.indexOf('key=') === -1){
+
+  /* If no placeholder found and no param already in URL → append */
+  if (!replaced) {
+    const hasKeyMatch = url.indexOf('=') !== -1;
+    const alreadyHasQ  = url.indexOf('num=') !== -1 ||
+                         url.indexOf('q=') !== -1 ||
+                         url.indexOf('query=') !== -1;
+    if (!alreadyHasQ) {
+      url += (url.indexOf('?') === -1 ? '?' : '&') + 'q=' + enc;
+    } else {
+      /* If num= or q= exists but empty (like num=) → fill it */
+      url = url.replace(/(num|q|query|value|input)=\s*(&|$)/gi, '$1=' + enc + '$2');
+    }
+  }
+
+  /* Auto-add API key ONLY if user didn't put one */
+  if (CFG.KEY && url.indexOf('key=') === -1) {
     url += (url.indexOf('?') === -1 ? '?' : '&') + 'key=' + encodeURIComponent(CFG.KEY);
   }
+
   return url;
-}
-
-function buildBronxUrl(feat, q) {
-  let endpoint = String(feat.endpoint || '').trim();
-  if (endpoint.charAt(0) !== '/') endpoint = '/' + endpoint;
-  const param = feat.param || 'num';
-  return CFG.BASE + endpoint + '?key=' + encodeURIComponent(CFG.KEY) + '&' + param + '=' + encodeURIComponent(q);
-}
-
-function parseHeaders(str) {
-  const out = {};
-  String(str || '').split('\n').forEach(line => {
-    const i = line.indexOf(':');
-    if (i > 0) {
-      const k = line.slice(0, i).trim();
-      const v = line.slice(i + 1).trim();
-      if (k) out[k] = v;
-    }
-  });
-  return out;
 }
 
 /* ============================================================
