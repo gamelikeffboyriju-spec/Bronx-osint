@@ -17,10 +17,10 @@ app.use(cookieParser());
    CONFIG
    ============================================================ */
 const CFG = {
-  BASE:     process.env.BRONX_API_BASE || 'https://bronx-papa-27y2.onrender.com',
+  BASE:     process.env.BRONX_API_BASE || 'https://bronx-api-website-com.onrender.com',
   KEY:      process.env.BRONX_API_KEY  || '',
-  ADMIN_U:  (process.env.ADMIN_USER    || 'bronx').toLowerCase(),
-  ADMIN_P:  process.env.ADMIN_PASS     || 'bronx@2025',
+  ADMIN_U:  (process.env.ADMIN_USER    || 'bronx9').toLowerCase(),
+  ADMIN_P:  process.env.ADMIN_PASS     || 'bronx9@2025',
   UPI_ID:   process.env.UPI_ID         || 'bronxultra850956@upi',
   UPI_NAME: process.env.UPI_NAME       || 'BRONX ULTRA',
   TG_LINK:  process.env.TG_LINK        || 'https://t.me/BRONX_ULTRA',
